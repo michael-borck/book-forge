@@ -8,6 +8,7 @@
 import { providerRegistry } from './ProviderRegistry';
 import { MockProvider } from './MockProvider';
 import { GroqProvider } from './GroqProvider';
+import { ClaudeProvider } from './ClaudeProvider';
 
 /**
  * Register all available providers
@@ -24,10 +25,10 @@ export function registerAllProviders(): void {
     providerRegistry.registerProvider(GroqProvider);
     console.log('✓ Groq provider registered');
 
+    providerRegistry.registerProvider(ClaudeProvider);
+    console.log('✓ Claude provider registered');
+
     // TODO: Uncomment as other providers are implemented
-    
-    // providerRegistry.registerProvider(ClaudeProvider);
-    // console.log('✓ Claude provider registered');
     
     // providerRegistry.registerProvider(OpenAIProvider);
     // console.log('✓ OpenAI provider registered');

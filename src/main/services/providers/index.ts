@@ -31,7 +31,7 @@ export { MockProvider } from './MockProvider';
 
 // Real providers
 export { GroqProvider } from './GroqProvider';
-// export { ClaudeProvider } from './ClaudeProvider';
+export { ClaudeProvider } from './ClaudeProvider';
 // export { OpenAIProvider } from './OpenAIProvider';
 // export { GeminiProvider } from './GeminiProvider';
 // export { OllamaProvider } from './OllamaProvider';
