@@ -64,7 +64,7 @@ export interface GenerationChunk {
   id: string;
   content: string;
   tokens: number;
-  finishReason?: 'stop' | 'length' | 'content_filter' | 'error';
+  finishReason?: 'stop' | 'length' | 'content_filter' | 'error' | 'function_call';
   usage?: TokenUsage;
   model: string;
   timestamp: Date;

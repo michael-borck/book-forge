@@ -9,6 +9,7 @@ import { providerRegistry } from './ProviderRegistry';
 import { MockProvider } from './MockProvider';
 import { GroqProvider } from './GroqProvider';
 import { ClaudeProvider } from './ClaudeProvider';
+import { OpenAIProvider } from './OpenAIProvider';
 
 /**
  * Register all available providers
@@ -28,10 +29,10 @@ export function registerAllProviders(): void {
     providerRegistry.registerProvider(ClaudeProvider);
     console.log('✓ Claude provider registered');
 
+    providerRegistry.registerProvider(OpenAIProvider);
+    console.log('✓ OpenAI provider registered');
+
     // TODO: Uncomment as other providers are implemented
-    
-    // providerRegistry.registerProvider(OpenAIProvider);
-    // console.log('✓ OpenAI provider registered');
     
     // providerRegistry.registerProvider(GeminiProvider);
     // console.log('✓ Gemini provider registered');
