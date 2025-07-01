@@ -33,7 +33,7 @@ export { MockProvider } from './MockProvider';
 export { GroqProvider } from './GroqProvider';
 export { ClaudeProvider } from './ClaudeProvider';
 export { OpenAIProvider } from './OpenAIProvider';
-// export { GeminiProvider } from './GeminiProvider';
+export { GeminiProvider } from './GeminiProvider';
 // export { OllamaProvider } from './OllamaProvider';
 
 // Note: Utility functions removed to avoid circular imports
