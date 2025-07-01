@@ -7,9 +7,10 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
-    "dev:main": "cross-env NODE_ENV=development electronmon -r ts-node/register/transpile-only ./src/main/index.ts",
-    "dev:renderer": "cd src/renderer && next dev",
+    "dev": "node scripts/dev-runner.js",
+    "dev:main": "cross-env NODE_ENV=development electron --no-sandbox .",
+    "dev:renderer": "cd src/renderer && cross-env NODE_ENV=development next dev",
+    "dev:old": "concurrently -n \"MAIN,RENDERER\" -c \"blue,green\" \"npm run dev:main\" \"npm run dev:renderer\"",
     "build": "npm run build:main && npm run build:renderer",
     "build:main": "tsc -p tsconfig.main.json",
     "build:renderer": "cd src/renderer && next build",
@@ -37,7 +38,7 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
     "@tanstack/react-virtual": "^3.5.0",
-    "class-variance-authority": "^0.7.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.2.1",
@@ -50,7 +51,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.5",
-    "tailwind-merge": "^2.3.0",
+    "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8",
     "zustand": "^4.5.2"
@@ -115,7 +116,10 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         }
       ],
       "icon": "resources/icon.ico"
@@ -124,11 +128,15 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "snap",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Office",
