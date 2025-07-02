@@ -11,6 +11,7 @@ import { GroqProvider } from './GroqProvider';
 import { ClaudeProvider } from './ClaudeProvider';
 import { OpenAIProvider } from './OpenAIProvider';
 import { GeminiProvider } from './GeminiProvider';
+import { OllamaProvider } from './OllamaProvider';
 
 /**
  * Register all available providers
@@ -36,10 +37,10 @@ export function registerAllProviders(): void {
     providerRegistry.registerProvider(GeminiProvider);
     console.log('✓ Gemini provider registered');
 
-    // TODO: Uncomment as other providers are implemented
-    
-    // providerRegistry.registerProvider(OllamaProvider);
-    // console.log('✓ Ollama provider registered');
+    providerRegistry.registerProvider(OllamaProvider);
+    console.log('✓ Ollama provider registered');
+
+    // All major providers now implemented!
 
     const registeredCount = providerRegistry.getSupportedProviders().length;
     console.log(`Provider registration complete. ${registeredCount} providers available.`);

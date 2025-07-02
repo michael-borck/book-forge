@@ -36,7 +36,8 @@ const createWindow = async () => {
 
   // Load the app
   if (isDevelopment) {
-    mainWindow.loadURL('http://localhost:3000');
+    const port = process.env.RENDERER_PORT || '3000';
+    mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/out/index.html'));

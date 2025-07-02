@@ -12,6 +12,7 @@ console.log(`${green}Starting BookForge Development Environment...${reset}\n`);
 
 let electronProcess = null;
 let nextProcess = null;
+let nextPort = 3000; // Default port
 
 // Function to start Next.js
 function startNext() {
@@ -27,6 +28,13 @@ function startNext() {
     const lines = data.toString().split('\n').filter(line => line.trim());
     lines.forEach(line => {
       console.log(`${blue}[RENDERER]${reset} ${line}`);
+      
+      // Extract port number from Next.js output
+      const portMatch = line.match(/http:\/\/localhost:(\d+)/);
+      if (portMatch) {
+        nextPort = portMatch[1];
+        console.log(`${green}[INFO]${reset} Next.js running on port ${nextPort}`);
+      }
       
       // When Next.js is ready, start Electron
       if (line.includes('Ready in') || line.includes('ready')) {
@@ -78,7 +86,7 @@ function startElectron() {
   
   electronProcess = spawn('npx', ['electron', '--no-sandbox', '.'], {
     shell: true,
-    env: { ...process.env, NODE_ENV: 'development' }
+    env: { ...process.env, NODE_ENV: 'development', RENDERER_PORT: nextPort }
   });
   
   electronProcess.stdout.on('data', (data) => {
