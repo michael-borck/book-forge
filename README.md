@@ -1,5 +1,9 @@
 # BookForge
 
+<!-- BADGES:START -->
+[![edtech](https://img.shields.io/badge/-edtech-4caf50?style=flat-square)](https://github.com/topics/edtech) [![ai](https://img.shields.io/badge/-ai-ff6f00?style=flat-square)](https://github.com/topics/ai) [![artificial-intelligence](https://img.shields.io/badge/-artificial--intelligence-blue?style=flat-square)](https://github.com/topics/artificial-intelligence) [![book](https://img.shields.io/badge/-book-795548?style=flat-square)](https://github.com/topics/book) [![book-generation](https://img.shields.io/badge/-book--generation-blue?style=flat-square)](https://github.com/topics/book-generation) [![content-generation](https://img.shields.io/badge/-content--generation-blue?style=flat-square)](https://github.com/topics/content-generation) [![cross-platform](https://img.shields.io/badge/-cross--platform-blue?style=flat-square)](https://github.com/topics/cross-platform) [![desktop-app](https://img.shields.io/badge/-desktop--app-blue?style=flat-square)](https://github.com/topics/desktop-app) [![electron](https://img.shields.io/badge/-electron-47848f?style=flat-square)](https://github.com/topics/electron) [![nextjs](https://img.shields.io/badge/-nextjs-blue?style=flat-square)](https://github.com/topics/nextjs)
+<!-- BADGES:END -->
+
 <div align="center">
   <img src="assets/logo.png" alt="BookForge Logo" width="200" />
   
