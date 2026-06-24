@@ -347,14 +347,14 @@ export class OllamaProvider extends BaseProvider {
     }
   }
 
-  protected async doCountTokens(text: string, model?: string): Promise<number> {
+  protected async doCountTokens(text: string, _model?: string): Promise<number> {
     // Ollama doesn't provide a tokenization endpoint
     // Use estimation based on typical model characteristics
     // Most Ollama models use similar tokenization to Llama: roughly 3.5-4 characters per token
     return Math.ceil(text.length / 3.8);
   }
 
-  protected doEstimateCost(usage: TokenUsage, modelId: string): CostEstimate {
+  protected doEstimateCost(usage: TokenUsage, _modelId: string): CostEstimate {
     // Local execution has no cost
     return {
       inputCost: 0,

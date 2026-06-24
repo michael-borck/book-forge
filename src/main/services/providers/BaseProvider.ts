@@ -305,7 +305,7 @@ export abstract class BaseProvider extends EventEmitter implements IProvider {
   protected abstract doEstimateCost(usage: TokenUsage, modelId: string): CostEstimate;
   protected abstract doHealthCheck(): Promise<void>;
 
-  protected async validateProviderConfig(config: ProviderConfig): Promise<ConfigValidationResult> {
+  protected async validateProviderConfig(_config: ProviderConfig): Promise<ConfigValidationResult> {
     // Default implementation - providers can override
     return { isValid: true, errors: [], warnings: [] };
   }

@@ -79,7 +79,7 @@ export class ProviderRegistry extends EventEmitter implements ProviderFactory {
    * Get all supported provider information
    */
   getSupportedProviders(): ProviderInfo[] {
-    return Array.from(this.registeredProviders.entries()).map(([id, ProviderClass]) => {
+    return Array.from(this.registeredProviders.entries()).map(([, ProviderClass]) => {
       const tempInstance = new ProviderClass();
       const info = tempInstance.info;
       tempInstance.dispose().catch(console.error);

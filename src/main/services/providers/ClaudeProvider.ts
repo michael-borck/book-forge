@@ -365,7 +365,7 @@ export class ClaudeProvider extends BaseProvider {
     }
   }
 
-  protected async doCountTokens(text: string, model?: string): Promise<number> {
+  protected async doCountTokens(text: string, _model?: string): Promise<number> {
     // Claude doesn't provide a dedicated tokenization endpoint
     // Use estimation based on Claude's tokenization characteristics
     // Claude uses a similar tokenizer to GPT models but slightly different

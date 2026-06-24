@@ -65,7 +65,7 @@ export class MockProvider extends BaseProvider {
   // Implementation Methods
   // =====================
 
-  protected async doInitialize(config: ProviderConfig): Promise<void> {
+  protected async doInitialize(_config: ProviderConfig): Promise<void> {
     // Mock initialization - just simulate a small delay
     await new Promise(resolve => setTimeout(resolve, 100));
     console.log('Mock provider initialized');
@@ -144,7 +144,7 @@ export class MockProvider extends BaseProvider {
     }
   }
 
-  protected async doCountTokens(text: string, model?: string): Promise<number> {
+  protected async doCountTokens(text: string, _model?: string): Promise<number> {
     // Simulate a small delay for realism
     await new Promise(resolve => setTimeout(resolve, 10));
     

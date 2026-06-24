@@ -15,7 +15,6 @@ import type {
   IProvider,
   ProviderInfo,
   ProviderConfig,
-  ProviderStatus,
   GenerationParams,
   GenerationChunk,
   Model,
@@ -457,7 +456,7 @@ export class ProviderManager extends EventEmitter {
     });
   }
 
-  private async handleProviderFailure(providerId: string, error: ProviderError | null): Promise<void> {
+  private async handleProviderFailure(providerId: string, _error: ProviderError | null): Promise<void> {
     const fallbackProviders = this.getFailoverProviders().filter(id => id !== providerId);
     
     for (const fallbackId of fallbackProviders) {
@@ -557,7 +556,7 @@ export class ProviderManager extends EventEmitter {
     this.emit('usage-updated', providerId, stats);
   }
 
-  private updateErrorStats(providerId: string): void {
+  private updateErrorStats(_providerId: string): void {
     // Error stats are updated in updateUsageStats
   }
 

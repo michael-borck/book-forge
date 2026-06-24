@@ -2,7 +2,7 @@
  * Book-related types for BookForge
  */
 
-import type { CostEstimate, TokenUsage } from './provider';
+import type { CostEstimate } from './provider';
 
 // Book metadata and structure
 export interface Book {
