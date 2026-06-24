@@ -1,6 +1,7 @@
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { distDir, platformExePath } = require('./electron-dist');
 
 const yellow = '\x1b[33m';
 const blue = '\x1b[34m';
@@ -86,7 +87,13 @@ function startElectron() {
   
   electronProcess = spawn('npx', ['electron', '--no-sandbox', '.'], {
     shell: true,
-    env: { ...process.env, NODE_ENV: 'development', RENDERER_PORT: nextPort }
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+      RENDERER_PORT: nextPort,
+      // Load Electron from its APFS location (see ensureElectron / electron-dist).
+      ELECTRON_OVERRIDE_DIST_PATH: distDir(),
+    }
   });
   
   electronProcess.stdout.on('data', (data) => {
@@ -124,5 +131,16 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
+// Ensure the Electron binary is available on an APFS path before starting.
+function ensureElectron() {
+  const exe = path.join(distDir(), platformExePath());
+  if (fs.existsSync(exe)) return;
+  console.log(
+    `${yellow}[SETUP]${reset} Provisioning Electron to ~/.cache (this volume can't hold its symlinks)...`
+  );
+  execFileSync('node', [path.join(__dirname, 'provision-electron.js')], { stdio: 'inherit' });
+}
+
 // Start the development process
+ensureElectron();
 compileTypeScript();

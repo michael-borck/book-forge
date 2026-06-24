@@ -8,6 +8,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev-runner.js",
+    "provision:electron": "node scripts/provision-electron.js",
     "dev:main": "cross-env NODE_ENV=development electron --no-sandbox .",
     "dev:renderer": "cd src/renderer && cross-env NODE_ENV=development next dev",
     "dev:old": "concurrently -n \"MAIN,RENDERER\" -c \"blue,green\" \"npm run dev:main\" \"npm run dev:renderer\"",
