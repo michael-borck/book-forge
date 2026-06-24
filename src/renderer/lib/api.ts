@@ -28,6 +28,7 @@ export interface Model {
 
 export interface RedactedProviderConfig {
   hasApiKey: boolean;
+  hasBearerToken: boolean;
   endpoint?: string;
   organizationId?: string;
   timeout?: number;
@@ -39,6 +40,7 @@ export interface ProviderConfigInput {
   apiKey?: string;
   endpoint?: string;
   organizationId?: string;
+  bearerToken?: string;
 }
 
 export type BookStatus = 'generating' | 'completed' | 'error' | 'cancelled';

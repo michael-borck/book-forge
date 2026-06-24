@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [selectedId, setSelectedId] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [endpoint, setEndpoint] = useState('')
+  const [bearerToken, setBearerToken] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
@@ -66,6 +67,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setApiKey('')
     setEndpoint('')
+    setBearerToken('')
     setMessage(null)
   }, [selectedId])
 
@@ -76,11 +78,13 @@ export default function SettingsPage() {
     const config = {
       ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
       ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}),
+      ...(bearerToken.trim() ? { bearerToken: bearerToken.trim() } : {}),
     }
     const result = await configure(provider.id, config)
     setBusy(false)
     if (result.ok) {
       setApiKey('')
+      setBearerToken('')
       setMessage({ ok: true, text: 'Saved and connected.' })
     } else {
       setMessage({ ok: false, text: result.message ?? 'Failed to configure provider.' })
@@ -198,16 +202,42 @@ export default function SettingsPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="endpoint">
-                        Endpoint {provider.requiresApiKey ? '(optional)' : ''}
+                        {provider.id === 'openai-compatible'
+                          ? 'Base URL (required)'
+                          : `Endpoint ${provider.requiresApiKey ? '(optional)' : ''}`}
                       </Label>
                       <Input
                         id="endpoint"
                         type="text"
-                        placeholder={provider.supportsLocalModels ? 'http://localhost:11434' : 'Default'}
+                        placeholder={
+                          provider.id === 'openai-compatible'
+                            ? 'https://openrouter.ai/api/v1'
+                            : provider.supportsLocalModels
+                              ? 'http://localhost:11434'
+                              : 'Default'
+                        }
                         value={endpoint}
                         onChange={(e) => setEndpoint(e.target.value)}
                       />
                     </div>
+
+                    {provider.supportsLocalModels && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bearer">Bearer token (optional — for secured/remote Ollama)</Label>
+                        <Input
+                          id="bearer"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={
+                            configured[provider.id]?.hasBearerToken
+                              ? '•••••••• (leave blank to keep existing)'
+                              : 'Bearer token'
+                          }
+                          value={bearerToken}
+                          onChange={(e) => setBearerToken(e.target.value)}
+                        />
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap items-center gap-2">
                       <Button size="sm" disabled={!canSave} onClick={handleSave}>
