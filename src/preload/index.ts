@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 
 // The API exposed to the renderer. Note: API keys are passed *in* via
 // provider.initialize but are never returned — provider.configured() yields a
@@ -19,6 +19,17 @@ const api = {
   // Book / generation operations
   book: {
     generate: (params: unknown) => ipcRenderer.invoke('book:generate', params),
+    list: () => ipcRenderer.invoke('book:list'),
+    get: (id: string) => ipcRenderer.invoke('book:get', id),
+    delete: (id: string) => ipcRenderer.invoke('book:delete', id),
+    // Subscribe to generation progress. Returns an unsubscribe function.
+    onProgress: (callback: (progress: unknown) => void) => {
+      const listener = (_event: IpcRendererEvent, progress: unknown) => callback(progress);
+      ipcRenderer.on('book:progress', listener);
+      return () => {
+        ipcRenderer.removeListener('book:progress', listener);
+      };
+    },
   },
 
   // Export operations

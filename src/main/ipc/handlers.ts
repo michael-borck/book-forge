@@ -11,14 +11,17 @@ import { ZodError } from 'zod';
 import { providerRegistry, ProviderManager } from '../services/providers';
 import { registerAllProviders } from '../services/providers/registerProviders';
 import { secureConfigStore } from '../services/secureStore';
+import { bookStore } from '../services/bookStore';
+import { BookGenerator } from '../services/bookGenerator';
 import {
   providerIdSchema,
   providerConfigSchema,
-  generationParamsSchema,
+  bookRequestSchema,
+  bookIdSchema,
   appConfigKeySchema,
   appConfigValueSchema,
 } from './schemas';
-import type { ProviderConfig, GenerationParams } from '../../shared/types';
+import type { ProviderConfig } from '../../shared/types';
 
 // A serialisable result envelope. Errors are returned (not thrown) so the
 // renderer receives a structured payload instead of a stringified Error.
@@ -27,6 +30,7 @@ type IpcResult<T> =
   | { success: false; error: { code: string; message: string } };
 
 let manager: ProviderManager | null = null;
+let generator: BookGenerator | null = null;
 let initialized = false;
 
 function ok<T>(data: T): { success: true } & T {
@@ -62,6 +66,7 @@ export function registerIPCHandlers(): void {
   if (!initialized) {
     registerAllProviders();
     manager = new ProviderManager();
+    generator = new BookGenerator(manager);
     initialized = true;
     // Restore previously-configured providers in the background. Failures (e.g.
     // offline, revoked key) leave the provider un-ready rather than crashing.
@@ -145,29 +150,43 @@ export function registerIPCHandlers(): void {
     })
   );
 
-  // ===== Generation =====
+  // ===== Book generation + library =====
 
   ipcMain.handle(
     'book:generate',
-    guard(async (_event: IpcMainInvokeEvent, paramsRaw: unknown) => {
-      const parsed = generationParamsSchema.parse(paramsRaw);
-      const { providerId, ...genParams } = parsed;
-
-      if (providerId) {
-        await manager!.setCurrentProvider(providerId);
-      }
-      const provider = manager!.getCurrentProvider();
-      if (!provider) {
-        return fail('PROVIDER_NOT_CONFIGURED', 'No provider is currently active');
-      }
-
-      const chunk = await manager!.generate(genParams as GenerationParams);
-      return ok({
-        content: chunk.content,
-        model: chunk.model,
-        finishReason: chunk.finishReason,
-        usage: chunk.usage,
+    guard(async (event: IpcMainInvokeEvent, paramsRaw: unknown) => {
+      const req = bookRequestSchema.parse(paramsRaw);
+      const sender = event.sender;
+      // Generation can take a while; progress events stream to the renderer
+      // while this invoke is awaited, and the completed book is returned.
+      const book = await generator!.generate(req, (progress) => {
+        if (!sender.isDestroyed()) sender.send('book:progress', progress);
       });
+      return ok({ book });
+    })
+  );
+
+  ipcMain.handle(
+    'book:list',
+    guard(async () => ok({ books: bookStore.list() }))
+  );
+
+  ipcMain.handle(
+    'book:get',
+    guard(async (_event: IpcMainInvokeEvent, idRaw: unknown) => {
+      const id = bookIdSchema.parse(idRaw);
+      const book = bookStore.get(id);
+      if (!book) return fail('NOT_FOUND', `No book with id ${id}`);
+      return ok({ book });
+    })
+  );
+
+  ipcMain.handle(
+    'book:delete',
+    guard(async (_event: IpcMainInvokeEvent, idRaw: unknown) => {
+      const id = bookIdSchema.parse(idRaw);
+      bookStore.delete(id);
+      return ok({ id });
     })
   );
 

@@ -51,6 +51,19 @@ export const generationParamsSchema = z
   })
   .strict();
 
+// High-level "generate a book" request from the renderer.
+export const bookRequestSchema = z
+  .object({
+    topic: z.string().min(1).max(500),
+    style: z.enum(['educational', 'casual', 'professional', 'creative']),
+    length: z.enum(['short', 'medium', 'long']),
+    providerId: providerIdSchema.optional(),
+    model: z.string().min(1).max(128).optional(),
+  })
+  .strict();
+
+export const bookIdSchema = z.string().uuid();
+
 // Keys for the generic, non-secret app-config store. Restricted to a known
 // character set; provider credentials are intentionally NOT reachable here.
 export const appConfigKeySchema = z
