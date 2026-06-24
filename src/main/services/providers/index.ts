@@ -33,6 +33,7 @@ export { MockProvider } from './MockProvider';
 export { GroqProvider } from './GroqProvider';
 export { ClaudeProvider } from './ClaudeProvider';
 export { OpenAIProvider } from './OpenAIProvider';
+export { OpenAICompatibleProvider } from './OpenAICompatibleProvider';
 export { GeminiProvider } from './GeminiProvider';
 export { OllamaProvider } from './OllamaProvider';
 

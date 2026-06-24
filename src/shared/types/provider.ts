@@ -22,6 +22,8 @@ export interface ProviderConfig {
   customHeaders?: Record<string, string>;
   timeout?: number;
   maxRetries?: number;
+  /** Bearer token for secured/remote Ollama instances (ignored for local). */
+  bearerToken?: string;
   /** Persisted default model id for this provider (used for generation). */
   model?: string;
 }

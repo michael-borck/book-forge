@@ -119,8 +119,8 @@ export class OpenAIProvider extends BaseProvider {
     customEndpoints: true,
   };
 
-  private baseUrl = 'https://api.openai.com/v1';
-  private apiKey: string = '';
+  protected baseUrl = 'https://api.openai.com/v1';
+  protected apiKey: string = '';
   private organizationId?: string;
   private project?: string;
 
@@ -467,8 +467,8 @@ export class OpenAIProvider extends BaseProvider {
     }
   }
 
-  private async makeRequest<T = any>(
-    endpoint: string, 
+  protected async makeRequest<T = any>(
+    endpoint: string,
     options: {
       method: string;
       body?: string;
