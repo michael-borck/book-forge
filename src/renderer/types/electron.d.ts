@@ -1,18 +1,32 @@
+// Result envelope returned by every IPC handler.
+export type IpcResult<T = Record<string, unknown>> =
+  | ({ success: true } & T)
+  | { success: false; error: { code: string; message: string } };
+
 export interface ElectronAPI {
   provider: {
-    initialize: (config: any) => Promise<any>;
+    list: () => Promise<IpcResult<{ providers: unknown[] }>>;
+    configured: () => Promise<IpcResult<{ configured: Record<string, unknown> }>>;
+    status: () => Promise<IpcResult<{ statuses: Record<string, string>; current: string | null }>>;
+    initialize: (
+      providerId: string,
+      config: unknown
+    ) => Promise<IpcResult<{ providerId: string; status: string }>>;
+    setCurrent: (providerId: string) => Promise<IpcResult<{ current: string }>>;
+    remove: (providerId: string) => Promise<IpcResult<{ providerId: string }>>;
+    models: (providerId: string) => Promise<IpcResult<{ models: unknown[] }>>;
   };
   book: {
-    generate: (params: any) => Promise<any>;
+    generate: (params: unknown) => Promise<IpcResult<{ content: string; model: string }>>;
   };
   export: {
-    markdown: (bookId: string) => Promise<any>;
-    html: (bookId: string) => Promise<any>;
-    pdf: (bookId: string) => Promise<any>;
+    markdown: (bookId: string) => Promise<IpcResult>;
+    html: (bookId: string) => Promise<IpcResult>;
+    pdf: (bookId: string) => Promise<IpcResult>;
   };
   config: {
-    get: (key: string) => Promise<any>;
-    set: (key: string, value: any) => Promise<any>;
+    get: (key: string) => Promise<IpcResult<{ value: unknown }>>;
+    set: (key: string, value: unknown) => Promise<IpcResult<{ key: string }>>;
   };
 }
 
