@@ -22,6 +22,8 @@ export interface ProviderConfig {
   customHeaders?: Record<string, string>;
   timeout?: number;
   maxRetries?: number;
+  /** Persisted default model id for this provider (used for generation). */
+  model?: string;
 }
 
 // Available models for a provider

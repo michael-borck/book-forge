@@ -16,7 +16,9 @@ export interface StoredChapter {
   title: string;
   content: string;
   status: ChapterStatus;
-  tokens: number;
+  tokens: number; // total (in + out) for this chapter
+  tokensIn: number;
+  tokensOut: number;
 }
 
 export interface StoredBook {
@@ -32,6 +34,8 @@ export interface StoredBook {
   error?: string;
   chapters: StoredChapter[];
   totalTokens: number;
+  tokensIn: number;
+  tokensOut: number;
   createdAt: string;
   modifiedAt: string;
 }

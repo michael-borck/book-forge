@@ -24,8 +24,11 @@ export const providerConfigSchema = z
     timeout: z.number().int().min(1000).max(300000).optional(),
     maxRetries: z.number().int().min(0).max(10).optional(),
     bearerToken: z.string().min(1).max(512).optional(),
+    model: z.string().min(1).max(128).optional(),
   })
   .strict();
+
+export const modelIdSchema = z.string().min(1).max(128);
 
 const messageSchema = z
   .object({

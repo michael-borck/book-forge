@@ -18,9 +18,20 @@ function makeBook(content: string): StoredBook {
     model: 'mock-1',
     status: 'completed',
     chapters: [
-      { id: 'c1', number: 1, title: 'Intro', content, status: 'completed', tokens: 0 },
+      {
+        id: 'c1',
+        number: 1,
+        title: 'Intro',
+        content,
+        status: 'completed',
+        tokens: 0,
+        tokensIn: 0,
+        tokensOut: 0,
+      },
     ],
     totalTokens: 0,
+    tokensIn: 0,
+    tokensOut: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
     modifiedAt: '2026-01-01T00:00:00.000Z',
   };

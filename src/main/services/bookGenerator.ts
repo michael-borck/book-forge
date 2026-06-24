@@ -6,7 +6,7 @@
 
 import { randomUUID } from 'crypto';
 import type { ProviderManager } from './providers';
-import type { GenerationParams } from '../../shared/types';
+import type { GenerationParams, GenerationChunk } from '../../shared/types';
 import { bookStore, type StoredBook, type StoredChapter } from './bookStore';
 import { CHAPTERS_BY_LENGTH, parseOutline } from './outline';
 
@@ -29,6 +29,14 @@ export interface BookProgress {
 }
 
 export type ProgressFn = (p: BookProgress) => void;
+
+/** Extract input/output token counts from a generation chunk's usage. */
+function usageOf(chunk: GenerationChunk): { tokensIn: number; tokensOut: number } {
+  return {
+    tokensIn: chunk.usage?.promptTokens ?? 0,
+    tokensOut: chunk.usage?.completionTokens ?? chunk.tokens ?? 0,
+  };
+}
 
 export class BookGenerator {
   constructor(private manager: ProviderManager) {}
@@ -69,6 +77,8 @@ export class BookGenerator {
       status: 'generating',
       chapters: [],
       totalTokens: 0,
+      tokensIn: 0,
+      tokensOut: 0,
       createdAt: now,
       modifiedAt: now,
     };
@@ -83,14 +93,19 @@ export class BookGenerator {
         message: 'Generating outline…',
       });
 
-      const titles = await this.generateOutline(req, totalChapters, model);
-      book.chapters = titles.map((title, i) => ({
+      const outline = await this.generateOutline(req, totalChapters, model);
+      book.tokensIn += outline.tokensIn;
+      book.tokensOut += outline.tokensOut;
+      book.totalTokens = book.tokensIn + book.tokensOut;
+      book.chapters = outline.titles.map((title, i) => ({
         id: randomUUID(),
         number: i + 1,
         title,
         content: '',
         status: 'pending',
         tokens: 0,
+        tokensIn: 0,
+        tokensOut: 0,
       }));
       this.touch(book);
 
@@ -123,10 +138,15 @@ export class BookGenerator {
 
         try {
           const chunk = await this.generateChapter(req, book, chapter, model);
+          const { tokensIn, tokensOut } = usageOf(chunk);
           chapter.content = chunk.content;
-          chapter.tokens = chunk.usage?.totalTokens ?? chunk.tokens ?? 0;
+          chapter.tokensIn = tokensIn;
+          chapter.tokensOut = tokensOut;
+          chapter.tokens = tokensIn + tokensOut;
           chapter.status = 'completed';
-          book.totalTokens += chapter.tokens;
+          book.tokensIn += tokensIn;
+          book.tokensOut += tokensOut;
+          book.totalTokens = book.tokensIn + book.tokensOut;
         } catch {
           chapter.status = 'error';
         }
@@ -164,7 +184,7 @@ export class BookGenerator {
     req: BookRequest,
     totalChapters: number,
     model: string
-  ): Promise<string[]> {
+  ): Promise<{ titles: string[]; tokensIn: number; tokensOut: number }> {
     const params: GenerationParams = {
       model,
       messages: [
@@ -178,11 +198,12 @@ export class BookGenerator {
       maxTokens: 1000,
     };
     const chunk = await this.manager.generate(params);
-    const titles = parseOutline(chunk.content, totalChapters);
+    const { tokensIn, tokensOut } = usageOf(chunk);
+    let titles = parseOutline(chunk.content, totalChapters);
     if (titles.length === 0) {
-      return Array.from({ length: totalChapters }, (_, i) => `Chapter ${i + 1}`);
+      titles = Array.from({ length: totalChapters }, (_, i) => `Chapter ${i + 1}`);
     }
-    return titles;
+    return { titles, tokensIn, tokensOut };
   }
 
   private async generateChapter(

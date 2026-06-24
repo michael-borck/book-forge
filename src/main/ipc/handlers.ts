@@ -14,9 +14,11 @@ import { secureConfigStore } from '../services/secureStore';
 import { bookStore } from '../services/bookStore';
 import { BookGenerator } from '../services/bookGenerator';
 import { bookExporter } from '../services/bookExporter';
+import { getEnvKey, hasEnvKey } from '../services/envKeys';
 import {
   providerIdSchema,
   providerConfigSchema,
+  modelIdSchema,
   bookRequestSchema,
   bookIdSchema,
   appConfigKeySchema,
@@ -81,7 +83,14 @@ export function registerIPCHandlers(): void {
 
   ipcMain.handle(
     'provider:list',
-    guard(async () => ok({ providers: providerRegistry.getSupportedProviders() }))
+    guard(async () =>
+      ok({
+        providers: providerRegistry.getSupportedProviders().map((info) => ({
+          ...info,
+          envKeyAvailable: hasEnvKey(info.id),
+        })),
+      })
+    )
   );
 
   ipcMain.handle(
@@ -114,12 +123,31 @@ export function registerIPCHandlers(): void {
       // Merge over any previously-stored config so the caller can update a single
       // field (or re-initialise) without resending the API key every time.
       const existing = secureConfigStore.getProviderConfig(providerId) ?? {};
-      const effective: ProviderConfig = { ...existing, ...incoming };
+      const merged: ProviderConfig = { ...existing, ...incoming };
+      secureConfigStore.setProviderConfig(providerId, merged);
 
-      secureConfigStore.setProviderConfig(providerId, effective);
+      // For initialization, fall back to an environment-variable key when none is
+      // stored. The env key is used but never written to the encrypted store.
+      const effective: ProviderConfig = { ...merged };
+      if (!effective.apiKey) {
+        const envKey = getEnvKey(providerId);
+        if (envKey) effective.apiKey = envKey;
+      }
+
       await manager!.initializeProvider(providerId, effective);
 
       return ok({ providerId, status: providerRegistry.getProviderStatuses()[providerId] ?? 'unknown' });
+    })
+  );
+
+  ipcMain.handle(
+    'provider:setModel',
+    guard(async (_event: IpcMainInvokeEvent, providerIdRaw: unknown, modelRaw: unknown) => {
+      const providerId = providerIdSchema.parse(providerIdRaw);
+      const model = modelIdSchema.parse(modelRaw);
+      const existing = secureConfigStore.getProviderConfig(providerId) ?? {};
+      secureConfigStore.setProviderConfig(providerId, { ...existing, model });
+      return ok({ providerId, model });
     })
   );
 
@@ -160,6 +188,14 @@ export function registerIPCHandlers(): void {
     'book:generate',
     guard(async (event: IpcMainInvokeEvent, paramsRaw: unknown) => {
       const req = bookRequestSchema.parse(paramsRaw);
+
+      // Default to the provider's persisted model when the request omits one.
+      if (!req.model) {
+        const providerId = req.providerId ?? manager!.getCurrentProviderId() ?? undefined;
+        const cfg = providerId ? secureConfigStore.getProviderConfig(providerId) : null;
+        if (cfg?.model) req.model = cfg.model;
+      }
+
       const sender = event.sender;
       let bookId: string | undefined;
       // Generation can take a while; progress events stream to the renderer
