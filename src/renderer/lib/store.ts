@@ -10,6 +10,9 @@ import {
   type ProviderInfo,
   type RedactedProviderConfig,
   type ProviderConfigInput,
+  type Book,
+  type BookProgress,
+  type BookRequestInput,
 } from './api';
 
 export type ProviderUiStatus = 'ready' | 'configured' | 'error' | 'not-configured';
@@ -110,5 +113,74 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (status === 'error') return 'error';
     if (configured[providerId]) return 'configured';
     return 'not-configured';
+  },
+}));
+
+interface BookState {
+  books: Book[];
+  loading: boolean;
+  unavailable: boolean;
+  error: string | null;
+  generating: boolean;
+  progress: BookProgress | null;
+
+  refresh: () => Promise<void>;
+  generate: (
+    req: BookRequestInput
+  ) => Promise<{ ok: boolean; book?: Book; message?: string }>;
+  remove: (id: string) => Promise<void>;
+}
+
+export const useBookStore = create<BookState>((set, get) => ({
+  books: [],
+  loading: false,
+  unavailable: false,
+  error: null,
+  generating: false,
+  progress: null,
+
+  async refresh() {
+    if (!api.isDesktop()) {
+      set({ unavailable: true, loading: false });
+      return;
+    }
+    set({ loading: true, error: null });
+    try {
+      const books = await api.listBooks();
+      set({ books, loading: false });
+    } catch (error) {
+      set({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load library',
+      });
+    }
+  },
+
+  async generate(req) {
+    set({ generating: true, progress: null, error: null });
+    const unsubscribe = api.onBookProgress((progress) => set({ progress }));
+    try {
+      const book = await api.generateBook(req);
+      await get().refresh();
+      return { ok: true, book };
+    } catch (error) {
+      await get().refresh();
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : 'Failed to generate book';
+      return { ok: false, message };
+    } finally {
+      unsubscribe();
+      set({ generating: false });
+    }
+  },
+
+  async remove(id) {
+    try {
+      await api.deleteBook(id);
+    } finally {
+      await get().refresh();
+    }
   },
 }));

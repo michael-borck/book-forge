@@ -17,7 +17,11 @@ export interface ElectronAPI {
     models: (providerId: string) => Promise<IpcResult<{ models: unknown[] }>>;
   };
   book: {
-    generate: (params: unknown) => Promise<IpcResult<{ content: string; model: string }>>;
+    generate: (params: unknown) => Promise<IpcResult<{ book: unknown }>>;
+    list: () => Promise<IpcResult<{ books: unknown[] }>>;
+    get: (id: string) => Promise<IpcResult<{ book: unknown }>>;
+    delete: (id: string) => Promise<IpcResult<{ id: string }>>;
+    onProgress: (callback: (progress: unknown) => void) => () => void;
   };
   export: {
     markdown: (bookId: string) => Promise<IpcResult>;

@@ -31,6 +31,53 @@ export interface ProviderConfigInput {
   organizationId?: string;
 }
 
+export type BookStatus = 'generating' | 'completed' | 'error' | 'cancelled';
+export type ChapterStatus = 'pending' | 'generating' | 'completed' | 'error';
+
+export interface BookChapter {
+  id: string;
+  number: number;
+  title: string;
+  content: string;
+  status: ChapterStatus;
+  tokens: number;
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  description: string;
+  topic: string;
+  style: string;
+  length: string;
+  provider: string;
+  model: string;
+  status: BookStatus;
+  error?: string;
+  chapters: BookChapter[];
+  totalTokens: number;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+export interface BookRequestInput {
+  topic: string;
+  style: string;
+  length: string;
+  providerId?: string;
+  model?: string;
+}
+
+export interface BookProgress {
+  bookId: string;
+  status: BookStatus;
+  phase: 'outline' | 'chapter' | 'done' | 'error';
+  currentChapter?: number;
+  totalChapters?: number;
+  chapterTitle?: string;
+  message?: string;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly code: string,
@@ -107,5 +154,30 @@ export const api = {
 
   async removeProvider(providerId: string): Promise<void> {
     await unwrap(bridge().provider.remove(providerId));
+  },
+
+  async generateBook(req: BookRequestInput): Promise<Book> {
+    const { book } = await unwrap<{ book: Book }>(bridge().book.generate(req));
+    return book;
+  },
+
+  async listBooks(): Promise<Book[]> {
+    const { books } = await unwrap<{ books: Book[] }>(bridge().book.list());
+    return books;
+  },
+
+  async getBook(id: string): Promise<Book> {
+    const { book } = await unwrap<{ book: Book }>(bridge().book.get(id));
+    return book;
+  },
+
+  async deleteBook(id: string): Promise<void> {
+    await unwrap(bridge().book.delete(id));
+  },
+
+  /** Subscribe to generation progress. Returns an unsubscribe function. */
+  onBookProgress(callback: (progress: BookProgress) => void): () => void {
+    if (!isDesktop()) return () => {};
+    return window.electronAPI.book.onProgress((p) => callback(p as BookProgress));
   },
 };
