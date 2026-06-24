@@ -6,8 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Ensure compatibility with Electron
-  assetPrefix: process.env.NODE_ENV === 'production' ? '.' : '',
+  // Assets are referenced with absolute paths; in production the packaged
+  // Electron app should serve the `out/` export via a custom protocol
+  // (e.g. app://) rather than file:// so these resolve. A relative assetPrefix
+  // (".") is rejected by next/font, so we leave it at the default.
   // Disable server-side features
   typescript: {
     ignoreBuildErrors: false,
