@@ -39,6 +39,9 @@ lerna-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+# macOS AppleDouble sidecar files (created on non-HFS volumes, e.g. exFAT)
+._*
+.AppleDouble
 
 # Env files
 .env
