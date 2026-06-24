@@ -10,6 +10,7 @@ import {
   type ProviderInfo,
   type RedactedProviderConfig,
   type ProviderConfigInput,
+  type Model,
   type Book,
   type BookProgress,
   type BookRequestInput,
@@ -21,6 +22,7 @@ interface SettingsState {
   providers: ProviderInfo[];
   statuses: Record<string, string>;
   configured: Record<string, RedactedProviderConfig>;
+  models: Record<string, Model[]>;
   current: string | null;
   loading: boolean;
   /** Set when the bridge is unavailable (e.g. opened in a plain browser). */
@@ -34,6 +36,8 @@ interface SettingsState {
   ) => Promise<{ ok: boolean; message?: string }>;
   remove: (providerId: string) => Promise<void>;
   setCurrent: (providerId: string) => Promise<void>;
+  loadModels: (providerId: string) => Promise<void>;
+  setModel: (providerId: string, model: string) => Promise<void>;
   /** Derive the display status for a provider id. */
   uiStatus: (providerId: string) => ProviderUiStatus;
 }
@@ -42,6 +46,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   providers: [],
   statuses: {},
   configured: {},
+  models: {},
   current: null,
   loading: false,
   unavailable: false,
@@ -104,6 +109,20 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } finally {
       await get().refresh();
     }
+  },
+
+  async loadModels(providerId) {
+    try {
+      const models = await api.listModels(providerId);
+      set((s) => ({ models: { ...s.models, [providerId]: models } }));
+    } catch {
+      // Models are only listable once the provider is initialized; ignore.
+    }
+  },
+
+  async setModel(providerId, model) {
+    await api.setProviderModel(providerId, model);
+    await get().refresh();
   },
 
   uiStatus(providerId) {

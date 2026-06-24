@@ -28,7 +28,8 @@ function BookReader({ book, onBack }: { book: Book; onBack: () => void }) {
       </Button>
       <h2 className="text-2xl font-bold">{book.title}</h2>
       <p className="text-sm text-muted-foreground mt-1">
-        {book.provider} · {book.model} · {book.chapters.length} chapters
+        {book.provider} · {book.model} · {book.chapters.length} chapters ·{' '}
+        {book.tokensIn.toLocaleString()} in / {book.tokensOut.toLocaleString()} out tokens
       </p>
       <div className="mt-6 space-y-8">
         {book.chapters.map((chapter) => (
@@ -104,6 +105,9 @@ export default function LibraryPage() {
                       {formatDate(book.createdAt)}
                     </span>
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {book.tokensIn.toLocaleString()} in / {book.tokensOut.toLocaleString()} out tokens
+                  </p>
                   <div className="mt-4 flex gap-2">
                     <Button size="sm" onClick={() => setSelectedId(book.id)}>
                       Read

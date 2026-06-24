@@ -3,12 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettingsStore, type ProviderUiStatus } from '@/lib/store'
-import type { ProviderInfo } from '@/lib/api'
 
 const STATUS_META: Record<ProviderUiStatus, { label: string; variant: BadgeProps['variant'] }> = {
   ready: { label: 'Ready', variant: 'default' },
@@ -17,125 +15,101 @@ const STATUS_META: Record<ProviderUiStatus, { label: string; variant: BadgeProps
   'not-configured': { label: 'Not configured', variant: 'outline' },
 }
 
-function ProviderRow({ provider }: { provider: ProviderInfo }) {
-  const { configured, current, uiStatus, configure, remove, setCurrent } = useSettingsStore()
-  const status = uiStatus(provider.id)
-  const isConfigured = Boolean(configured[provider.id])
+export default function SettingsPage() {
+  const {
+    providers,
+    configured,
+    models,
+    current,
+    loading,
+    unavailable,
+    error,
+    refresh,
+    configure,
+    remove,
+    setCurrent,
+    loadModels,
+    setModel,
+    uiStatus,
+  } = useSettingsStore()
 
-  const [open, setOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [endpoint, setEndpoint] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  // Default the selection to the current/first provider once loaded.
+  useEffect(() => {
+    if (!selectedId && providers.length) {
+      setSelectedId(current ?? providers[0].id)
+    }
+  }, [providers, current, selectedId])
+
+  const provider = providers.find((p) => p.id === selectedId)
+  const status = provider ? uiStatus(provider.id) : 'not-configured'
+  const isConfigured = provider ? Boolean(configured[provider.id]) : false
+  const isReady = status === 'ready'
+
+  // Load models once the selected provider is ready.
+  useEffect(() => {
+    if (provider && isReady && !models[provider.id]) {
+      void loadModels(provider.id)
+    }
+  }, [provider, isReady, models, loadModels])
+
+  // Reset the per-provider form fields when switching providers.
+  useEffect(() => {
+    setApiKey('')
+    setEndpoint('')
+    setMessage(null)
+  }, [selectedId])
+
   async function handleSave() {
+    if (!provider) return
     setBusy(true)
     setMessage(null)
-    const config = provider.requiresApiKey
-      ? { apiKey: apiKey.trim(), ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}) }
-      : { ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}) }
+    const config = {
+      ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+      ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}),
+    }
     const result = await configure(provider.id, config)
     setBusy(false)
     if (result.ok) {
       setApiKey('')
       setMessage({ ok: true, text: 'Saved and connected.' })
-      setOpen(false)
     } else {
       setMessage({ ok: false, text: result.message ?? 'Failed to configure provider.' })
     }
   }
 
   async function handleRemove() {
+    if (!provider) return
     setBusy(true)
     await remove(provider.id)
     setBusy(false)
     setMessage(null)
   }
 
-  const meta = STATUS_META[status]
+  const providerModels = provider ? (models[provider.id] ?? []) : []
+  const selectedModel = provider ? (configured[provider.id]?.model ?? '') : ''
 
-  return (
-    <div className="py-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium">{provider.name}</h3>
-            {current === provider.id && <Badge variant="outline">Current</Badge>}
-          </div>
-          <p className="text-sm text-muted-foreground">{provider.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={meta.variant}>{meta.label}</Badge>
-          {status === 'ready' && current !== provider.id && (
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setCurrent(provider.id)}>
-              Use
-            </Button>
-          )}
-          <Button size="sm" variant="outline" onClick={() => setOpen((o) => !o)}>
-            {open ? 'Cancel' : isConfigured ? 'Edit' : 'Configure'}
-          </Button>
-          {isConfigured && (
-            <Button size="sm" variant="ghost" disabled={busy} onClick={handleRemove}>
-              Remove
-            </Button>
-          )}
-        </div>
-      </div>
+  const keyPlaceholder = isConfigured
+    ? '•••••••• (leave blank to keep existing)'
+    : provider?.envKeyAvailable
+      ? 'Using environment key (paste to override)'
+      : 'Enter your API key'
 
-      {open && (
-        <div className="mt-4 space-y-3 rounded-md border bg-muted/30 p-4">
-          {provider.requiresApiKey && (
-            <div className="space-y-1.5">
-              <Label htmlFor={`${provider.id}-key`}>API key</Label>
-              <Input
-                id={`${provider.id}-key`}
-                type="password"
-                autoComplete="off"
-                placeholder={isConfigured ? '•••••••• (leave blank to keep existing)' : 'Enter your API key'}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor={`${provider.id}-endpoint`}>
-              Endpoint {provider.requiresApiKey ? '(optional)' : ''}
-            </Label>
-            <Input
-              id={`${provider.id}-endpoint`}
-              type="text"
-              placeholder={provider.supportsLocalModels ? 'http://localhost:11434' : 'Default'}
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
-              disabled={busy || (provider.requiresApiKey && !isConfigured && !apiKey.trim())}
-              onClick={handleSave}
-            >
-              {busy ? 'Saving…' : 'Save & test'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {message && (
-        <p className={`mt-2 text-sm ${message.ok ? 'text-green-600' : 'text-destructive'}`}>
-          {message.text}
-        </p>
-      )}
-    </div>
-  )
-}
-
-export default function SettingsPage() {
-  const { providers, loading, unavailable, error, refresh } = useSettingsStore()
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
+  const canSave =
+    !busy &&
+    (!provider?.requiresApiKey ||
+      isConfigured ||
+      provider?.envKeyAvailable ||
+      apiKey.trim().length > 0)
 
   return (
     <div className="container mx-auto p-6">
@@ -151,11 +125,11 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>AI Providers</CardTitle>
             <CardDescription>
-              Configure your API keys and select models for book generation. Keys are encrypted and
-              stored locally — they never leave your machine except to call the provider.
+              Pick a provider, add its API key, and choose a model. Keys are encrypted and stored
+              locally — they never leave your machine except to call the provider.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-5">
             {unavailable && (
               <p className="text-sm text-muted-foreground">
                 Provider configuration is only available in the BookForge desktop app.
@@ -165,13 +139,135 @@ export default function SettingsPage() {
             {loading && !providers.length && (
               <p className="text-sm text-muted-foreground">Loading providers…</p>
             )}
-            {!unavailable &&
-              providers.map((provider, index) => (
-                <div key={provider.id}>
-                  {index > 0 && <Separator />}
-                  <ProviderRow provider={provider} />
+
+            {!unavailable && providers.length > 0 && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="provider">Provider</Label>
+                  <select
+                    id="provider"
+                    value={selectedId}
+                    onChange={(e) => setSelectedId(e.target.value)}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {uiStatus(p.id) === 'ready' ? ' — ready' : ''}
+                        {uiStatus(p.id) !== 'ready' && p.envKeyAvailable ? ' — env key' : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
+
+                {provider && (
+                  <div className="space-y-4 rounded-md border bg-muted/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{provider.name}</h3>
+                        <p className="text-sm text-muted-foreground">{provider.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {current === provider.id && <Badge variant="outline">Current</Badge>}
+                        <Badge variant={STATUS_META[status].variant}>
+                          {STATUS_META[status].label}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {provider.envKeyAvailable && !isConfigured && (
+                      <p className="text-sm text-muted-foreground">
+                        An environment key was detected — just click <strong>Save &amp; test</strong>{' '}
+                        to use it, or paste a key to override.
+                      </p>
+                    )}
+
+                    {provider.requiresApiKey && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="apiKey">API key</Label>
+                        <Input
+                          id="apiKey"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={keyPlaceholder}
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="endpoint">
+                        Endpoint {provider.requiresApiKey ? '(optional)' : ''}
+                      </Label>
+                      <Input
+                        id="endpoint"
+                        type="text"
+                        placeholder={provider.supportsLocalModels ? 'http://localhost:11434' : 'Default'}
+                        value={endpoint}
+                        onChange={(e) => setEndpoint(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" disabled={!canSave} onClick={handleSave}>
+                        {busy ? 'Saving…' : 'Save & test'}
+                      </Button>
+                      {isReady && current !== provider.id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => setCurrent(provider.id)}
+                        >
+                          Set as current
+                        </Button>
+                      )}
+                      {isConfigured && (
+                        <Button size="sm" variant="ghost" disabled={busy} onClick={handleRemove}>
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="model">Model</Label>
+                      {isReady ? (
+                        providerModels.length > 0 ? (
+                          <select
+                            id="model"
+                            value={selectedModel}
+                            onChange={(e) => setModel(provider.id, e.target.value)}
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                          >
+                            <option value="" disabled>
+                              Select a model…
+                            </option>
+                            {providerModels.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Loading models…</p>
+                        )
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Save &amp; test the provider to choose a model.
+                        </p>
+                      )}
+                    </div>
+
+                    {message && (
+                      <p className={`text-sm ${message.ok ? 'text-green-600' : 'text-destructive'}`}>
+                        {message.text}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

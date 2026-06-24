@@ -13,6 +13,10 @@ export interface ElectronAPI {
       config: unknown
     ) => Promise<IpcResult<{ providerId: string; status: string }>>;
     setCurrent: (providerId: string) => Promise<IpcResult<{ current: string }>>;
+    setModel: (
+      providerId: string,
+      model: string
+    ) => Promise<IpcResult<{ providerId: string; model: string }>>;
     remove: (providerId: string) => Promise<IpcResult<{ providerId: string }>>;
     models: (providerId: string) => Promise<IpcResult<{ models: unknown[] }>>;
   };

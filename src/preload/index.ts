@@ -12,6 +12,8 @@ const api = {
     initialize: (providerId: string, config: unknown) =>
       ipcRenderer.invoke('provider:initialize', providerId, config),
     setCurrent: (providerId: string) => ipcRenderer.invoke('provider:setCurrent', providerId),
+    setModel: (providerId: string, model: string) =>
+      ipcRenderer.invoke('provider:setModel', providerId, model),
     remove: (providerId: string) => ipcRenderer.invoke('provider:remove', providerId),
     models: (providerId: string) => ipcRenderer.invoke('provider:models', providerId),
   },

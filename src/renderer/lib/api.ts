@@ -15,6 +15,15 @@ export interface ProviderInfo {
   supportsStreaming: boolean;
   supportsLocalModels: boolean;
   requiresApiKey: boolean;
+  /** True when an API key for this provider is available in the environment. */
+  envKeyAvailable?: boolean;
+}
+
+export interface Model {
+  id: string;
+  name: string;
+  description?: string;
+  contextLength: number;
 }
 
 export interface RedactedProviderConfig {
@@ -23,6 +32,7 @@ export interface RedactedProviderConfig {
   organizationId?: string;
   timeout?: number;
   maxRetries?: number;
+  model?: string;
 }
 
 export interface ProviderConfigInput {
@@ -56,6 +66,8 @@ export interface Book {
   error?: string;
   chapters: BookChapter[];
   totalTokens: number;
+  tokensIn: number;
+  tokensOut: number;
   createdAt: string;
   modifiedAt: string;
 }
@@ -152,6 +164,15 @@ export const api = {
 
   async setCurrentProvider(providerId: string): Promise<void> {
     await unwrap(bridge().provider.setCurrent(providerId));
+  },
+
+  async listModels(providerId: string): Promise<Model[]> {
+    const { models } = await unwrap<{ models: Model[] }>(bridge().provider.models(providerId));
+    return models;
+  },
+
+  async setProviderModel(providerId: string, model: string): Promise<void> {
+    await unwrap(bridge().provider.setModel(providerId, model));
   },
 
   async removeProvider(providerId: string): Promise<void> {
