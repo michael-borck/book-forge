@@ -1,130 +1,110 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { FileCode, FileImage, Download } from 'lucide-react'
+import { FileCode, FileText, FileImage } from 'lucide-react'
+import { useBookStore } from '@/lib/store'
+import { api, ApiError, type ExportFormat } from '@/lib/api'
 
-const exportFormats = [
-  {
-    format: 'Markdown',
-    icon: FileCode,
-    description: 'Clean, portable format compatible with Pandoc and other tools',
-    fileExtension: '.md',
-    available: true,
-  },
-  {
-    format: 'HTML',
-    icon: FileCode,
-    description: 'Responsive web format with customizable themes',
-    fileExtension: '.html',
-    available: true,
-  },
-  {
-    format: 'PDF',
-    icon: FileImage,
-    description: 'Professional format ready for printing or sharing',
-    fileExtension: '.pdf',
-    available: true,
-  },
+const FORMATS: { format: ExportFormat; label: string; icon: typeof FileText }[] = [
+  { format: 'markdown', label: 'Markdown', icon: FileCode },
+  { format: 'html', label: 'HTML', icon: FileText },
+  { format: 'pdf', label: 'PDF', icon: FileImage },
 ]
 
 export default function ExportPage() {
+  const { books, loading, unavailable, refresh } = useBookStore()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  async function handleExport(bookId: string, format: ExportFormat) {
+    setBusy(`${bookId}:${format}`)
+    setMessage(null)
+    try {
+      const result = await api.exportBook(bookId, format)
+      if (!result.canceled) {
+        setMessage({ ok: true, text: `Exported to ${result.path}` })
+      }
+    } catch (error) {
+      const text =
+        error instanceof ApiError || error instanceof Error ? error.message : 'Export failed'
+      setMessage({ ok: false, text })
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Export Books</h1>
+        <h1 className="text-3xl font-bold">Export</h1>
         <p className="text-muted-foreground mt-2">
-          Export your generated books in various formats
+          Export your books to Markdown, HTML, or PDF
         </p>
       </div>
-      
-      <div className="grid gap-6">
-        {/* Book Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Book</CardTitle>
-            <CardDescription>
-              Choose a book from your library to export
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <select className="w-full rounded-md border px-3 py-2">
-              <option>Introduction to Machine Learning</option>
-              <option>Web Development Best Practices</option>
-            </select>
-          </CardContent>
-        </Card>
-        
-        {/* Export Formats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Export Format</CardTitle>
-            <CardDescription>
-              Choose your preferred export format
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              {exportFormats.map((format) => {
-                const Icon = format.icon
-                return (
-                  <div
-                    key={format.format}
-                    className="flex items-center justify-between rounded-lg border p-4 hover:bg-accent cursor-pointer"
+
+      {unavailable && (
+        <p className="text-sm text-muted-foreground">
+          Export is only available in the BookForge desktop app.
+        </p>
+      )}
+
+      {message && (
+        <p className={`mb-4 text-sm ${message.ok ? 'text-green-600' : 'text-destructive'}`}>
+          {message.text}
+        </p>
+      )}
+
+      {loading && !books.length && <p className="text-sm text-muted-foreground">Loading…</p>}
+
+      <div className="space-y-4">
+        {books.map((book) => (
+          <Card key={book.id}>
+            <CardHeader>
+              <CardTitle className="text-lg">{book.title}</CardTitle>
+              <CardDescription>
+                {book.chapters.length} chapters · {book.status}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {FORMATS.map(({ format, label, icon: Icon }) => (
+                  <Button
+                    key={format}
+                    size="sm"
+                    variant="outline"
+                    disabled={busy !== null || book.status === 'error'}
+                    onClick={() => handleExport(book.id, format)}
                   >
-                    <div className="flex items-center gap-4">
-                      <Icon className="h-8 w-8 text-muted-foreground" />
-                      <div>
-                        <h3 className="font-medium">{format.format}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format.description}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">{format.fileExtension}</Badge>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Export Options */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Export Options</CardTitle>
-            <CardDescription>
-              Customize your export settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded" defaultChecked />
-                <span className="text-sm">Include table of contents</span>
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded" defaultChecked />
-                <span className="text-sm">Include metadata</span>
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded" />
-                <span className="text-sm">Include cover page</span>
-              </label>
-            </div>
-            
-            <div className="pt-4">
-              <Button className="w-full" size="lg">
-                <Download className="mr-2 h-4 w-4" />
-                Export Book
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                    <Icon className="h-4 w-4" />
+                    {busy === `${book.id}:${format}` ? 'Exporting…' : label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      {!loading && !unavailable && books.length === 0 && (
+        <Card className="py-12 text-center">
+          <CardContent>
+            <p className="text-muted-foreground">
+              No books to export yet.{' '}
+              <Link href="/generate" className="text-primary underline underline-offset-4">
+                Generate one first
+              </Link>
+              .
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

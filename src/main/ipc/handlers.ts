@@ -13,6 +13,7 @@ import { registerAllProviders } from '../services/providers/registerProviders';
 import { secureConfigStore } from '../services/secureStore';
 import { bookStore } from '../services/bookStore';
 import { BookGenerator } from '../services/bookGenerator';
+import { bookExporter } from '../services/bookExporter';
 import {
   providerIdSchema,
   providerConfigSchema,
@@ -190,12 +191,18 @@ export function registerIPCHandlers(): void {
     })
   );
 
-  // ===== Export (not yet implemented) =====
+  // ===== Export =====
 
   for (const format of ['markdown', 'html', 'pdf'] as const) {
     ipcMain.handle(
       `export:${format}`,
-      guard(async () => fail('NOT_IMPLEMENTED', `${format} export is not implemented yet`))
+      guard(async (_event: IpcMainInvokeEvent, idRaw: unknown) => {
+        const id = bookIdSchema.parse(idRaw);
+        const book = bookStore.get(id);
+        if (!book) return fail('NOT_FOUND', `No book with id ${id}`);
+        const outcome = await bookExporter.export(book, format);
+        return ok(outcome);
+      })
     );
   }
 

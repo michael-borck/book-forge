@@ -68,6 +68,8 @@ export interface BookRequestInput {
   model?: string;
 }
 
+export type ExportFormat = 'markdown' | 'html' | 'pdf';
+
 export interface BookProgress {
   bookId: string;
   status: BookStatus;
@@ -173,6 +175,13 @@ export const api = {
 
   async deleteBook(id: string): Promise<void> {
     await unwrap(bridge().book.delete(id));
+  },
+
+  async exportBook(
+    bookId: string,
+    format: ExportFormat
+  ): Promise<{ canceled: boolean; path?: string }> {
+    return unwrap(bridge().export[format](bookId));
   },
 
   /** Subscribe to generation progress. Returns an unsubscribe function. */

@@ -24,9 +24,9 @@ export interface ElectronAPI {
     onProgress: (callback: (progress: unknown) => void) => () => void;
   };
   export: {
-    markdown: (bookId: string) => Promise<IpcResult>;
-    html: (bookId: string) => Promise<IpcResult>;
-    pdf: (bookId: string) => Promise<IpcResult>;
+    markdown: (bookId: string) => Promise<IpcResult<{ canceled: boolean; path?: string }>>;
+    html: (bookId: string) => Promise<IpcResult<{ canceled: boolean; path?: string }>>;
+    pdf: (bookId: string) => Promise<IpcResult<{ canceled: boolean; path?: string }>>;
   };
   config: {
     get: (key: string) => Promise<IpcResult<{ value: unknown }>>;
