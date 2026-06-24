@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session, shell } from 'electron';
+import { URL } from 'url';
 import * as path from 'path';
 import { registerIPCHandlers } from './ipc/handlers';
 
@@ -7,6 +8,40 @@ let mainWindow: BrowserWindow | null = null;
 
 // Development mode check
 const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Content-Security-Policy applied to every response loaded by the app.
+// Production loads a static export over file:// and talks to AI providers only
+// through the main process, so it can be locked down hard. Development needs the
+// looser policy that Next.js' dev server / HMR require (eval + websocket).
+const buildCSP = (): string => {
+  if (isDevelopment) {
+    return [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' ws: http://localhost:*",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ');
+  }
+
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    // Tailwind / Next inject inline <style> tags; scripts stay locked to 'self'.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+};
 
 // Disable sandbox if environment variable is set
 if (process.env.ELECTRON_DISABLE_SANDBOX || isDevelopment) {
@@ -51,9 +86,20 @@ const createWindow = async () => {
 
 // App event handlers
 app.whenReady().then(async () => {
+  // Security: inject a Content-Security-Policy on every response.
+  const csp = buildCSP();
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    });
+  });
+
   // Register IPC handlers
   registerIPCHandlers();
-  
+
   // Create window
   await createWindow();
 });
@@ -70,9 +116,40 @@ app.on('activate', () => {
   }
 });
 
-// Security: Prevent new window creation
+// Returns true when a URL points at the app's own content (the dev server in
+// development, or the bundled file:// export in production).
+const isInternalUrl = (target: string): boolean => {
+  try {
+    const url = new URL(target);
+    if (isDevelopment) {
+      const port = process.env.RENDERER_PORT || '3000';
+      return url.protocol === 'http:' && url.hostname === 'localhost' && url.port === port;
+    }
+    return url.protocol === 'file:';
+  } catch {
+    return false;
+  }
+};
+
+// Security: control window creation and navigation.
 app.on('web-contents-created', (_, contents) => {
-  contents.setWindowOpenHandler(() => {
+  // Deny all attempts to open new windows; route external http(s) links to the OS browser.
+  contents.setWindowOpenHandler(({ url }) => {
+    try {
+      if (!isInternalUrl(url) && /^https?:$/.test(new URL(url).protocol)) {
+        shell.openExternal(url);
+      }
+    } catch {
+      // Malformed URL — fall through and deny.
+    }
     return { action: 'deny' };
+  });
+
+  // Block navigation away from the app's own content (e.g. a redirect or
+  // injected link trying to load remote/arbitrary pages into the main window).
+  contents.on('will-navigate', (event, url) => {
+    if (!isInternalUrl(url)) {
+      event.preventDefault();
+    }
   });
 });
