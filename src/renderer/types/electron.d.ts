@@ -18,6 +18,7 @@ export interface ElectronAPI {
   };
   book: {
     generate: (params: unknown) => Promise<IpcResult<{ book: unknown }>>;
+    cancel: (id: string) => Promise<IpcResult<{ id: string }>>;
     list: () => Promise<IpcResult<{ books: unknown[] }>>;
     get: (id: string) => Promise<IpcResult<{ book: unknown }>>;
     delete: (id: string) => Promise<IpcResult<{ id: string }>>;

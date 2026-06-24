@@ -19,6 +19,7 @@ const api = {
   // Book / generation operations
   book: {
     generate: (params: unknown) => ipcRenderer.invoke('book:generate', params),
+    cancel: (id: string) => ipcRenderer.invoke('book:cancel', id),
     list: () => ipcRenderer.invoke('book:list'),
     get: (id: string) => ipcRenderer.invoke('book:get', id),
     delete: (id: string) => ipcRenderer.invoke('book:delete', id),

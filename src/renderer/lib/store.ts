@@ -123,11 +123,14 @@ interface BookState {
   error: string | null;
   generating: boolean;
   progress: BookProgress | null;
+  /** Id of the in-flight generation (from progress events), for cancellation. */
+  currentBookId: string | null;
 
   refresh: () => Promise<void>;
   generate: (
     req: BookRequestInput
   ) => Promise<{ ok: boolean; book?: Book; message?: string }>;
+  cancel: () => Promise<void>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -138,6 +141,7 @@ export const useBookStore = create<BookState>((set, get) => ({
   error: null,
   generating: false,
   progress: null,
+  currentBookId: null,
 
   async refresh() {
     if (!api.isDesktop()) {
@@ -157,8 +161,10 @@ export const useBookStore = create<BookState>((set, get) => ({
   },
 
   async generate(req) {
-    set({ generating: true, progress: null, error: null });
-    const unsubscribe = api.onBookProgress((progress) => set({ progress }));
+    set({ generating: true, progress: null, currentBookId: null, error: null });
+    const unsubscribe = api.onBookProgress((progress) =>
+      set({ progress, currentBookId: progress.bookId })
+    );
     try {
       const book = await api.generateBook(req);
       await get().refresh();
@@ -172,8 +178,13 @@ export const useBookStore = create<BookState>((set, get) => ({
       return { ok: false, message };
     } finally {
       unsubscribe();
-      set({ generating: false });
+      set({ generating: false, currentBookId: null });
     }
+  },
+
+  async cancel() {
+    const id = get().currentBookId;
+    if (id) await api.cancelBook(id);
   },
 
   async remove(id) {

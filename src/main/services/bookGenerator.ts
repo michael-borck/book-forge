@@ -33,7 +33,11 @@ export type ProgressFn = (p: BookProgress) => void;
 export class BookGenerator {
   constructor(private manager: ProviderManager) {}
 
-  async generate(req: BookRequest, onProgress: ProgressFn): Promise<StoredBook> {
+  async generate(
+    req: BookRequest,
+    onProgress: ProgressFn,
+    shouldCancel?: (bookId: string) => boolean
+  ): Promise<StoredBook> {
     if (req.providerId) {
       await this.manager.setCurrentProvider(req.providerId);
     }
@@ -91,6 +95,21 @@ export class BookGenerator {
       this.touch(book);
 
       for (const chapter of book.chapters) {
+        // Cancellation takes effect between chapters (an in-flight chapter
+        // request finishes first).
+        if (shouldCancel?.(book.id)) {
+          book.status = 'cancelled';
+          this.touch(book);
+          onProgress({
+            bookId: book.id,
+            status: 'cancelled',
+            phase: 'done',
+            totalChapters: book.chapters.length,
+            message: 'Cancelled',
+          });
+          return book;
+        }
+
         chapter.status = 'generating';
         this.touch(book);
         onProgress({

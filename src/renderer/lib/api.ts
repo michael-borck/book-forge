@@ -163,6 +163,10 @@ export const api = {
     return book;
   },
 
+  async cancelBook(bookId: string): Promise<void> {
+    await unwrap(bridge().book.cancel(bookId));
+  },
+
   async listBooks(): Promise<Book[]> {
     const { books } = await unwrap<{ books: Book[] }>(bridge().book.list());
     return books;

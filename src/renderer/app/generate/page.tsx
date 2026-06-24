@@ -16,13 +16,16 @@ const LENGTHS = [
 ]
 
 export default function GeneratePage() {
-  const { generating, progress, generate } = useBookStore()
+  const { generating, progress, generate, cancel } = useBookStore()
   const { providers, statuses, refresh: refreshSettings, unavailable } = useSettingsStore()
 
   const [topic, setTopic] = useState('')
   const [style, setStyle] = useState('educational')
   const [length, setLength] = useState('short')
-  const [result, setResult] = useState<{ ok: boolean; bookId?: string; message?: string } | null>(null)
+  const [canceling, setCanceling] = useState(false)
+  const [result, setResult] = useState<
+    { kind: 'success' | 'cancelled' | 'error'; bookId?: string; message?: string } | null
+  >(null)
 
   useEffect(() => {
     void refreshSettings()
@@ -33,8 +36,21 @@ export default function GeneratePage() {
   async function handleGenerate(e: FormEvent) {
     e.preventDefault()
     setResult(null)
+    setCanceling(false)
     const res = await generate({ topic: topic.trim(), style, length })
-    setResult({ ok: res.ok, bookId: res.book?.id, message: res.message })
+    if (!res.ok) {
+      setResult({ kind: 'error', message: res.message })
+    } else if (res.book?.status === 'cancelled') {
+      setResult({ kind: 'cancelled', bookId: res.book.id })
+    } else {
+      setResult({ kind: 'success', bookId: res.book?.id })
+    }
+    setCanceling(false)
+  }
+
+  async function handleCancel() {
+    setCanceling(true)
+    await cancel()
   }
 
   const percent =
@@ -138,25 +154,50 @@ export default function GeneratePage() {
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {progress.phase === 'outline' && 'Generating outline…'}
-                  {progress.phase === 'chapter' &&
-                    `Writing chapter ${progress.currentChapter}/${progress.totalChapters}: ${progress.chapterTitle ?? ''}`}
-                  {progress.phase === 'done' && 'Finishing up…'}
-                </p>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    {progress.phase === 'outline' && 'Generating outline…'}
+                    {progress.phase === 'chapter' &&
+                      `Writing chapter ${progress.currentChapter}/${progress.totalChapters}: ${progress.chapterTitle ?? ''}`}
+                    {progress.phase === 'done' && 'Finishing up…'}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={canceling}
+                    onClick={handleCancel}
+                  >
+                    {canceling ? 'Cancelling…' : 'Cancel'}
+                  </Button>
+                </div>
+                {canceling && (
+                  <p className="text-xs text-muted-foreground">
+                    Stopping after the current chapter finishes…
+                  </p>
+                )}
               </div>
             )}
 
             {result && (
               <div className="mt-6 text-sm">
-                {result.ok ? (
+                {result.kind === 'success' && (
                   <p className="text-green-600">
                     Book generated.{' '}
                     <Link href="/library" className="underline underline-offset-4">
                       View in Library
                     </Link>
                   </p>
-                ) : (
+                )}
+                {result.kind === 'cancelled' && (
+                  <p className="text-amber-600">
+                    Generation cancelled — partial book saved.{' '}
+                    <Link href="/library" className="underline underline-offset-4">
+                      View in Library
+                    </Link>
+                  </p>
+                )}
+                {result.kind === 'error' && (
                   <p className="text-destructive">{result.message ?? 'Generation failed.'}</p>
                 )}
               </div>

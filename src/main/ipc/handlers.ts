@@ -34,6 +34,9 @@ let manager: ProviderManager | null = null;
 let generator: BookGenerator | null = null;
 let initialized = false;
 
+// Book ids the renderer has asked to cancel; checked between chapters.
+const cancelRequested = new Set<string>();
+
 function ok<T>(data: T): { success: true } & T {
   return { success: true, ...data };
 }
@@ -158,12 +161,31 @@ export function registerIPCHandlers(): void {
     guard(async (event: IpcMainInvokeEvent, paramsRaw: unknown) => {
       const req = bookRequestSchema.parse(paramsRaw);
       const sender = event.sender;
+      let bookId: string | undefined;
       // Generation can take a while; progress events stream to the renderer
       // while this invoke is awaited, and the completed book is returned.
-      const book = await generator!.generate(req, (progress) => {
-        if (!sender.isDestroyed()) sender.send('book:progress', progress);
-      });
-      return ok({ book });
+      try {
+        const book = await generator!.generate(
+          req,
+          (progress) => {
+            bookId = progress.bookId;
+            if (!sender.isDestroyed()) sender.send('book:progress', progress);
+          },
+          (id) => cancelRequested.has(id)
+        );
+        return ok({ book });
+      } finally {
+        if (bookId) cancelRequested.delete(bookId);
+      }
+    })
+  );
+
+  ipcMain.handle(
+    'book:cancel',
+    guard(async (_event: IpcMainInvokeEvent, idRaw: unknown) => {
+      const id = bookIdSchema.parse(idRaw);
+      cancelRequested.add(id);
+      return ok({ id });
     })
   );
 
