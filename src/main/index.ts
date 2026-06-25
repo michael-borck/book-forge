@@ -2,6 +2,7 @@ import { app, BrowserWindow, session, shell } from 'electron';
 import { URL } from 'url';
 import * as path from 'path';
 import { registerIPCHandlers } from './ipc/handlers';
+import { registerAppProtocolScheme, registerAppProtocol, APP_INDEX_URL } from './appProtocol';
 
 // Keep a global reference of the window object
 let mainWindow: BrowserWindow | null = null;
@@ -43,6 +44,12 @@ const buildCSP = (): string => {
   ].join('; ');
 };
 
+// Register the custom app:// scheme used to serve the packaged static export.
+// Must happen before the app is ready.
+if (!isDevelopment) {
+  registerAppProtocolScheme();
+}
+
 // Disable sandbox if environment variable is set
 if (process.env.ELECTRON_DISABLE_SANDBOX || isDevelopment) {
   app.commandLine.appendSwitch('no-sandbox');
@@ -75,7 +82,7 @@ const createWindow = async () => {
     mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/out/index.html'));
+    mainWindow.loadURL(APP_INDEX_URL);
   }
 
   // Handle window closed
@@ -97,6 +104,11 @@ app.whenReady().then(async () => {
     });
   });
 
+  // Serve the packaged static export over app:// in production.
+  if (!isDevelopment) {
+    registerAppProtocol(csp);
+  }
+
   // Register IPC handlers
   registerIPCHandlers();
 
@@ -117,7 +129,7 @@ app.on('activate', () => {
 });
 
 // Returns true when a URL points at the app's own content (the dev server in
-// development, or the bundled file:// export in production).
+// development, or the bundled app:// export in production).
 const isInternalUrl = (target: string): boolean => {
   try {
     const url = new URL(target);
@@ -125,7 +137,7 @@ const isInternalUrl = (target: string): boolean => {
       const port = process.env.RENDERER_PORT || '3000';
       return url.protocol === 'http:' && url.hostname === 'localhost' && url.port === port;
     }
-    return url.protocol === 'file:';
+    return url.protocol === 'app:';
   } catch {
     return false;
   }

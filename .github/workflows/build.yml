@@ -111,7 +111,8 @@ jobs:
             artifacts/**/*.snap
             artifacts/**/latest*.yml
             artifacts/**/*.blockmap
-          draft: false
+          # Publish as a draft so the release can be reviewed before going public.
+          draft: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
