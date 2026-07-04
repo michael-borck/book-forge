@@ -1,0 +1,275 @@
+/* BookForge landing page — dark forge look: warm near-black, ember-amber accent. */
+
+:root {
+  --night: #14110d;
+  --night-deep: #0e0c09;
+  --card: #1d1914;
+  --parchment: #f1eadf;
+  --parchment-soft: #b3a998;
+  --ember: #e89044;
+  --ember-hot: #f2a95c;
+  --line: #2f2920;
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--night);
+  color: var(--parchment);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+h2 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+a { color: var(--ember); }
+
+/* ---- Top nav ---- */
+
+.topnav {
+  border-bottom: 1px solid var(--line);
+  background: rgba(20, 17, 13, 0.92);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topnav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
+.brand-accent { color: var(--ember); }
+
+.topnav-links { display: flex; align-items: center; gap: 1.5rem; }
+.topnav-links a { color: var(--parchment-soft); text-decoration: none; font-size: 0.95rem; }
+.topnav-links a:hover { color: var(--parchment); }
+
+.nav-cta {
+  background: var(--ember);
+  color: var(--night-deep) !important;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 6px;
+}
+.nav-cta:hover { background: var(--ember-hot); }
+
+/* ---- Hero ---- */
+
+.hero {
+  padding: 72px 0 88px;
+  background:
+    radial-gradient(60% 80% at 75% 20%, rgba(232, 144, 68, 0.10), transparent 70%),
+    var(--night);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ember);
+  margin-bottom: 0.9rem;
+}
+
+.hero h1 {
+  font-size: 2.9rem;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.1rem;
+}
+
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, var(--ember) 20%, var(--ember-hot) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero .sub {
+  color: var(--parchment-soft);
+  font-size: 1.08rem;
+  margin-bottom: 2rem;
+  max-width: 34rem;
+}
+
+/* ---- Download block ---- */
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: linear-gradient(100deg, var(--ember) 0%, var(--ember-hot) 100%);
+  color: var(--night-deep);
+  font-size: 1.05rem;
+  padding: 13px 28px;
+  box-shadow: 0 4px 18px rgba(232, 144, 68, 0.25);
+}
+.btn-primary:hover { filter: brightness(1.07); }
+
+.platform-toggle {
+  display: inline-flex;
+  margin-left: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.platform-btn {
+  background: var(--card);
+  color: var(--parchment-soft);
+  border: none;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.platform-btn + .platform-btn { border-left: 1px solid var(--line); }
+.platform-btn:hover { color: var(--parchment); }
+.platform-btn.active { background: var(--line); color: var(--parchment); font-weight: 600; }
+
+.version { margin-top: 0.8rem; font-size: 0.9rem; color: var(--parchment-soft); }
+.alt-asset { margin-left: 8px; font-size: 0.9rem; }
+.all-releases { margin-top: 0.2rem; font-size: 0.9rem; }
+.all-releases a { color: var(--parchment-soft); }
+.all-releases a:hover { color: var(--ember); }
+
+.privacy-tag { margin-top: 1.6rem; font-size: 0.88rem; color: var(--parchment-soft); }
+
+/* ---- Carousel ---- */
+
+.hero-shots { min-width: 0; }
+
+.carousel {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  background: var(--card);
+}
+
+.carousel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.carousel img.active { opacity: 1; }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.carousel-dots button {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  background: var(--line);
+  cursor: pointer;
+  padding: 0;
+}
+.carousel-dots button.active { background: var(--ember); }
+
+/* ---- Sections ---- */
+
+.steps { padding: 72px 24px; }
+
+.grid { display: grid; gap: 20px; }
+.grid.two { grid-template-columns: 1fr 1fr; }
+.grid.three { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.card p { color: var(--parchment-soft); font-size: 0.95rem; }
+
+.card-num {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ember);
+  margin-bottom: 0.7rem;
+}
+
+.providers-band {
+  background: var(--night-deep);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 72px 0;
+}
+
+.providers-band .card.plain { background: var(--card); }
+
+.audience { padding: 72px 24px 88px; }
+
+/* ---- Footer ---- */
+
+.footer { border-top: 1px solid var(--line); padding: 28px 0; }
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.footer a { color: var(--parchment-soft); text-decoration: none; }
+.footer a:hover { color: var(--ember); }
+.copyright { margin-left: auto; color: var(--parchment-soft); }
+
+/* ---- Responsive ---- */
+
+@media (max-width: 880px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero h1 { font-size: 2.3rem; }
+  .grid.three, .grid.two { grid-template-columns: 1fr; }
+  .platform-toggle { margin-left: 0; margin-top: 12px; display: flex; width: fit-content; }
+}
+
+@media (max-width: 520px) {
+  /* GitHub/Releases live in the footer too; keep only the CTA up top. */
+  .topnav-links a:not(.nav-cta) { display: none; }
+}

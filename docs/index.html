@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookForge — From idea to finished book</title>
+  <meta name="description" content="BookForge is a desktop app that turns a topic into a complete, structured book with the AI provider of your choice — Claude, OpenAI, Gemini, Groq, Ollama or any OpenAI-compatible endpoint. Keys encrypted locally, books exported as Markdown, HTML or PDF." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <nav class="topnav">
+    <div class="container topnav-inner">
+      <span class="brand">Book<span class="brand-accent">Forge</span></span>
+      <div class="topnav-links">
+        <a href="https://github.com/michael-borck/book-forge">GitHub</a>
+        <a href="https://github.com/michael-borck/book-forge/releases">Releases</a>
+        <a href="#download" class="nav-cta">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Books, forged on your desktop</p>
+        <h1>From idea to finished book. <em>In one sitting.</em></h1>
+        <p class="sub">Give BookForge a topic, a style, and a length. It forges the
+          outline first, then writes every chapter with streaming preview — using
+          the AI provider of your choice — and exports the result as Markdown,
+          HTML, or PDF.</p>
+
+        <div class="download-block" id="download">
+          <a id="download-btn" class="btn btn-primary" href="https://github.com/michael-borck/book-forge/releases/latest">Download</a>
+          <div class="platform-toggle" role="group" aria-label="Choose platform">
+            <button data-platform="mac" class="platform-btn">macOS</button>
+            <button data-platform="windows" class="platform-btn">Windows</button>
+            <button data-platform="linux" class="platform-btn">Linux</button>
+          </div>
+          <p class="version"><span id="version">&nbsp;</span> <a id="alt-asset" class="alt-asset" href="#" hidden></a></p>
+          <p class="all-releases"><a href="https://github.com/michael-borck/book-forge/releases">All releases &amp; older versions →</a></p>
+        </div>
+
+        <p class="privacy-tag">No account. API keys encrypted on your device. Books saved to your disk.</p>
+      </div>
+
+      <div class="hero-shots">
+        <!-- Screenshots auto-discovered from screenshots/bookforge-1.png, -2.png, -3.png…
+             Drop a new numbered PNG in docs/screenshots/ and it joins the rotation. -->
+        <div class="carousel" id="carousel" aria-label="App screenshots">
+          <noscript><img src="screenshots/bookforge-1.png" alt="BookForge generate screen" /></noscript>
+        </div>
+        <div class="carousel-dots" id="carousel-dots"></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="container steps">
+    <h2>Three steps to a book</h2>
+    <div class="grid three">
+      <div class="card">
+        <div class="card-num">Describe</div>
+        <h3>Start with a topic</h3>
+        <p>Type what the book should be about, pick a style — educational,
+          technical, narrative — and choose how many chapters you want.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">Forge</div>
+        <h3>Watch it take shape</h3>
+        <p>Two-phase generation builds the structure first, then writes each
+          chapter with a live streaming preview and real-time token and cost
+          tracking.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">Export</div>
+        <h3>Take it anywhere</h3>
+        <p>Ship the finished book as clean Markdown, styled HTML, or a
+          print-ready PDF, straight from your library.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="providers-band">
+    <div class="container">
+      <h2>Bring your own AI</h2>
+      <div class="grid three">
+        <div class="card plain">
+          <h3>Any major provider</h3>
+          <p>Anthropic Claude, OpenAI, Google Gemini, Groq — or any
+            OpenAI-compatible endpoint. Your key, your model, one settings
+            tab.</p>
+        </div>
+        <div class="card plain">
+          <h3>Or fully local</h3>
+          <p>Point BookForge at Ollama and generate entire books without a
+            single token leaving your machine.</p>
+        </div>
+        <div class="card plain">
+          <h3>Keys kept safe</h3>
+          <p>API keys are encrypted with your operating system's secure storage
+            and never leave your device except to call the provider you
+            chose.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container audience">
+    <div class="grid two">
+      <div class="card">
+        <h3>For educators &amp; trainers</h3>
+        <p>Draft a course reader, a study guide, or a workbook for next
+          semester in an afternoon — structured into chapters, exported to PDF,
+          ready to refine.</p>
+      </div>
+      <div class="card">
+        <h3>For writers &amp; creators</h3>
+        <p>Break the blank page. Generate a complete first draft of that
+          non-fiction book or long-form guide, then rework it in your own
+          voice.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <a href="https://github.com/michael-borck/book-forge">GitHub</a>
+      <a href="https://github.com/michael-borck/book-forge/releases">Releases</a>
+      <span class="copyright">MIT © Michael Borck</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
