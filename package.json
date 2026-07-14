@@ -1,6 +1,6 @@
 {
   "name": "bookforge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generate complete books using AI, right from your desktop",
   "main": "dist/main/index.js",
   "author": "BookForge Team",
