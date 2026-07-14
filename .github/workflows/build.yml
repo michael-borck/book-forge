@@ -50,27 +50,39 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Import macOS signing certificate
+      # macOS: code-sign + notarize. electron-builder imports the signing
+      # certificate itself from CSC_LINK / CSC_KEY_PASSWORD (no manual keychain
+      # step - that approach hit keychain-partition codesign failures on the
+      # Electron framework's resource files). scripts/notarize.js (the afterSign
+      # hook) reads NOTARIZE_APPLE_*. The names are NOTARIZE_APPLE_* (not
+      # APPLE_*) so electron-builder's own buggy auto-notarize wrapper doesn't
+      # also fire.
+      - name: Package Electron app (macOS)
         if: matrix.os == 'macos-latest'
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        # An UNSET CSC_LINK secret arrives as an empty string, which
+        # electron-builder treats as a certificate file path and dies on
+        # ("not a file"). Unset it and disable identity discovery so the build
+        # proceeds unsigned until real signing secrets are configured.
         run: |
-          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
-          security create-keychain -p actions build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p actions build.keychain
-          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions build.keychain
-          rm certificate.p12
+          if [ -z "$CSC_LINK" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "CSC_LINK not set - building unsigned"
+          fi
+          npx electron-builder --mac --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          NOTARIZE_APPLE_ID: ${{ secrets.APPLE_ID }}
+          NOTARIZE_APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          NOTARIZE_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      - name: Package Electron app
+      - name: Package Electron app (Windows/Linux)
+        if: matrix.os != 'macos-latest'
         run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
