@@ -83,8 +83,11 @@ jobs:
           # Signing secrets can rot (certificate rotated, wrong keychain
           # password). A broken signing setup should not block a release: fall
           # back to an unsigned DMG and surface the failure loudly.
+          # Actions runs bash with -e, so disable it while capturing the status.
+          set +e
           npx electron-builder --mac --publish never
           status=$?
+          set -e
           if [ $status -ne 0 ]; then
             echo "::warning::Signed macOS build failed (status $status); retrying unsigned. Fix CSC_LINK/CSC_KEY_PASSWORD to restore signing."
             rm -rf release
