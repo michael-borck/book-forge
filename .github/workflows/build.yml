@@ -74,6 +74,7 @@ jobs:
         run: |
           if [ -z "$CSC_LINK" ]; then
             unset CSC_LINK CSC_KEY_PASSWORD
+            unset NOTARIZE_APPLE_ID NOTARIZE_APPLE_PASSWORD NOTARIZE_APPLE_TEAM_ID
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             echo "CSC_LINK not set - building unsigned"
             npx electron-builder --mac --publish never
@@ -92,6 +93,7 @@ jobs:
             echo "::warning::Signed macOS build failed (status $status); retrying unsigned. Fix CSC_LINK/CSC_KEY_PASSWORD to restore signing."
             rm -rf release
             unset CSC_LINK CSC_KEY_PASSWORD
+            unset NOTARIZE_APPLE_ID NOTARIZE_APPLE_PASSWORD NOTARIZE_APPLE_TEAM_ID
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             npx electron-builder --mac --publish never
           fi
