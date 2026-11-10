@@ -15,7 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
+          # Pin the Electron macOS job. electron-builder 24's automatic
+          # temporary-keychain import fails on newer macOS runners; macos-14 is
+          # the known-good runner used by the other Electron releases.
+          - os: macos-14
             platform: mac
           - os: ubuntu-latest
             platform: linux
@@ -61,7 +64,7 @@ jobs:
       # Write the App Store Connect API key to a temp file for @electron/notarize.
       # scripts/notarize.js prefers this over the legacy Apple ID credentials.
       - name: Prepare App Store Connect API key (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-14'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -84,7 +87,7 @@ jobs:
       # API key variables (APPLE_API_KEY_PATH / APPLE_API_KEY / APPLE_API_ISSUER)
       # and falls back to NOTARIZE_APPLE_*.
       - name: Package Electron app (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-14'
         # An UNSET CSC_LINK secret arrives as an empty string, which
         # electron-builder treats as a certificate file path and dies on
         # ("not a file"). Unset it and disable identity discovery so the build
@@ -96,7 +99,7 @@ jobs:
             unset APPLE_API_KEY_PATH APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_CONTENT
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             echo "CSC_LINK not set - building unsigned"
-            npx electron-builder --mac --publish never
+            npx electron-builder --mac --arm64 --publish never
             exit $?
           fi
 
@@ -105,7 +108,7 @@ jobs:
           # back to an unsigned DMG and surface the failure loudly.
           # Actions runs bash with -e, so disable it while capturing the status.
           set +e
-          npx electron-builder --mac --publish never
+          npx electron-builder --mac --arm64 --publish never
           status=$?
           set -e
           if [ $status -ne 0 ]; then
@@ -115,7 +118,7 @@ jobs:
             unset NOTARIZE_APPLE_ID NOTARIZE_APPLE_PASSWORD NOTARIZE_APPLE_TEAM_ID
             unset APPLE_API_KEY_PATH APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_CONTENT
             export CSC_IDENTITY_AUTO_DISCOVERY=false
-            npx electron-builder --mac --publish never
+            npx electron-builder --mac --arm64 --publish never
           fi
           exit $?
         env:
@@ -132,7 +135,7 @@ jobs:
           NOTARIZE_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Package Electron app (Windows/Linux)
-        if: matrix.os != 'macos-latest'
+        if: matrix.os != 'macos-14'
         run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
