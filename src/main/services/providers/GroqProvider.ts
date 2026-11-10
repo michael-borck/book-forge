@@ -227,6 +227,7 @@ export class GroqProvider extends BaseProvider {
     const response = await this.makeRequest<GroqChatResponse>('/chat/completions', {
       method: 'POST',
       body: JSON.stringify(request),
+      signal: params.signal,
     });
 
     const choice = response.choices[0];
@@ -266,6 +267,7 @@ export class GroqProvider extends BaseProvider {
       headers: {
         'Accept': 'text/event-stream',
       },
+      signal: params.signal,
     });
 
     if (!response.body) {
@@ -418,6 +420,7 @@ export class GroqProvider extends BaseProvider {
       body?: string;
       headers?: Record<string, string>;
       stream?: boolean;
+      signal?: AbortSignal;
     }
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -434,6 +437,7 @@ export class GroqProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {
@@ -510,6 +514,7 @@ export class GroqProvider extends BaseProvider {
       method: string;
       body?: string;
       headers?: Record<string, string>;
+      signal?: AbortSignal;
     }
   ): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -526,6 +531,7 @@ export class GroqProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {

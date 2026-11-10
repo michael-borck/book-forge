@@ -126,7 +126,7 @@ export function Sidebar() {
       {/* Version Info */}
       <div className="px-6 py-4">
         <p className="text-xs text-muted-foreground">
-          Version 0.1.0
+          Version 0.2.0
         </p>
       </div>
     </div>

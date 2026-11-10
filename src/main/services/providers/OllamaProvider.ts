@@ -237,6 +237,7 @@ export class OllamaProvider extends BaseProvider {
     const response = await this.makeRequest<OllamaGenerateResponse>('/api/chat', {
       method: 'POST',
       body: JSON.stringify(request),
+      signal: params.signal,
     });
 
     if (!response.message) {
@@ -280,6 +281,7 @@ export class OllamaProvider extends BaseProvider {
     const response = await this.makeStreamRequest('/api/chat', {
       method: 'POST',
       body: JSON.stringify(request),
+      signal: params.signal,
     });
 
     if (!response.body) {
@@ -504,6 +506,7 @@ export class OllamaProvider extends BaseProvider {
       method: string;
       body?: string;
       headers?: Record<string, string>;
+      signal?: AbortSignal;
     }
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -524,6 +527,7 @@ export class OllamaProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {
@@ -602,6 +606,7 @@ export class OllamaProvider extends BaseProvider {
       method: string;
       body?: string;
       headers?: Record<string, string>;
+      signal?: AbortSignal;
     }
   ): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -622,6 +627,7 @@ export class OllamaProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {

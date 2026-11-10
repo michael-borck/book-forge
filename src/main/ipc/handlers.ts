@@ -25,6 +25,7 @@ import {
   appConfigValueSchema,
 } from './schemas';
 import type { ProviderConfig } from '../../shared/types';
+import { registerProjectHandlers } from './projectHandlers';
 
 // A serialisable result envelope. Errors are returned (not thrown) so the
 // renderer receives a structured payload instead of a stringified Error.
@@ -77,6 +78,7 @@ export function registerIPCHandlers(): void {
     // Restore previously-configured providers in the background. Failures (e.g.
     // offline, revoked key) leave the provider un-ready rather than crashing.
     void restorePersistedProviders();
+    registerProjectHandlers(manager);
   }
 
   // ===== Provider discovery (no secrets) =====
@@ -185,6 +187,14 @@ export function registerIPCHandlers(): void {
   // ===== Book generation + library =====
 
   ipcMain.handle(
+    'book:estimate',
+    guard(async (_event: IpcMainInvokeEvent, paramsRaw: unknown) => {
+      const req = bookRequestSchema.parse(paramsRaw);
+      return ok(await generator!.estimate(req));
+    })
+  );
+
+  ipcMain.handle(
     'book:generate',
     guard(async (event: IpcMainInvokeEvent, paramsRaw: unknown) => {
       const req = bookRequestSchema.parse(paramsRaw);
@@ -220,8 +230,31 @@ export function registerIPCHandlers(): void {
     'book:cancel',
     guard(async (_event: IpcMainInvokeEvent, idRaw: unknown) => {
       const id = bookIdSchema.parse(idRaw);
-      cancelRequested.add(id);
+      // Abort the in-flight request immediately. The set is a fallback checked
+      // between chapters in case the provider ignores the signal.
+      if (generator!.cancel(id)) cancelRequested.add(id);
       return ok({ id });
+    })
+  );
+
+  ipcMain.handle(
+    'book:retry',
+    guard(async (event: IpcMainInvokeEvent, idRaw: unknown) => {
+      const id = bookIdSchema.parse(idRaw);
+      cancelRequested.delete(id);
+      const sender = event.sender;
+      try {
+        const book = await generator!.retryFailed(
+          id,
+          (progress) => {
+            if (!sender.isDestroyed()) sender.send('book:progress', progress);
+          },
+          (bookId) => cancelRequested.has(bookId)
+        );
+        return ok({ book });
+      } finally {
+        cancelRequested.delete(id);
+      }
     })
   );
 

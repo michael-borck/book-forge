@@ -50,6 +50,12 @@ jobs:
       - name: Build application
         run: npm run build
 
+      # electron-builder's snap target shells out to snapcraft, which is not
+      # preinstalled on every Ubuntu runner.
+      - name: Install snapcraft
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo snap install snapcraft --classic
+
       # macOS: code-sign + notarize. electron-builder imports the signing
       # certificate itself from CSC_LINK / CSC_KEY_PASSWORD (no manual keychain
       # step - that approach hit keychain-partition codesign failures on the
@@ -114,7 +120,7 @@ jobs:
           path: artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/**/*.dmg

@@ -53,6 +53,8 @@ export interface GenerationParams {
   presencePenalty?: number;
   stop?: string[];
   systemPrompt?: string;
+  /** Abort the in-flight request. Providers forward this to their HTTP client. */
+  signal?: AbortSignal;
 }
 
 // Message structure for conversations

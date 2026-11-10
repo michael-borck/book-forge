@@ -67,6 +67,163 @@ export const bookRequestSchema = z
 
 export const bookIdSchema = z.string().uuid();
 
+// ===== Workbench project schemas =====
+
+export const projectIdSchema = z.string().uuid();
+export const nodeIdSchema = z.string().uuid();
+
+export const createProjectSchema = z
+  .object({
+    title: z.string().min(1).max(300),
+    author: z.string().max(200).optional(),
+    language: z.string().min(2).max(20).optional(),
+    genre: z.string().max(100).optional(),
+    topic: z.string().max(500).optional(),
+    style: z.string().max(64).optional(),
+    length: z.enum(['short', 'medium', 'long']).optional(),
+    templateId: z.string().min(1).max(64).optional(),
+  })
+  .strict();
+
+export const projectMetaSchema = z
+  .object({
+    title: z.string().min(1).max(300).optional(),
+    author: z.string().max(200).optional(),
+    language: z.string().min(2).max(20).optional(),
+    genre: z.string().max(100).optional(),
+    description: z.string().max(5000).optional(),
+    topic: z.string().max(500).optional(),
+    style: z.string().max(64).optional(),
+    length: z.enum(['short', 'medium', 'long']).optional(),
+  })
+  .strict();
+
+export const nodeKindSchema = z.enum([
+  'part',
+  'chapter',
+  'scene',
+  'front-matter',
+  'back-matter',
+  'research',
+]);
+
+export const createNodeSchema = z
+  .object({
+    kind: nodeKindSchema,
+    title: z.string().min(1).max(300),
+    parentId: z.string().uuid().nullable().optional(),
+    synopsis: z.string().max(5000).optional(),
+    content: z.string().max(1_000_000).optional(),
+  })
+  .strict();
+
+export const nodePatchSchema = z
+  .object({
+    title: z.string().min(1).max(300).optional(),
+    synopsis: z.string().max(5000).optional(),
+    content: z.string().max(1_000_000).optional(),
+    kind: nodeKindSchema.optional(),
+    keywords: z.array(z.string().max(64)).max(50).optional(),
+  })
+  .strict();
+
+export const nodeMoveSchema = z
+  .object({
+    parentId: z.string().uuid().nullable(),
+    order: z.number().int().min(0).max(10000).optional(),
+  })
+  .strict();
+
+export const artworkIdSchema = z.string().uuid();
+
+export const imageProviderConfigSchema = z
+  .object({
+    apiKey: z.string().min(1).max(512).optional(),
+    bearerToken: z.string().min(1).max(512).optional(),
+    baseUrl: z.string().url().max(2048).optional(),
+    model: z.string().max(200).optional(),
+    size: z.string().max(40).optional(),
+    timeout: z.number().int().min(1000).max(300000).optional(),
+    lora: z.string().max(300).optional(),
+  })
+  .strict();
+
+export const artworkPlanSchema = z
+  .object({
+    stylePreset: z.string().min(1).max(64).optional(),
+  })
+  .strict();
+
+export const artworkPatchSchema = z
+  .object({
+    prompt: z.string().max(4000).optional(),
+    alt: z.string().max(500).optional(),
+    caption: z.string().max(500).optional(),
+    status: z.enum(['planned', 'disabled']).optional(),
+  })
+  .strict();
+
+export const artworkGenerateAllSchema = z
+  .object({
+    maxImages: z.number().int().min(1).max(50).optional(),
+    maxCostUsd: z.number().min(0).max(100).optional(),
+  })
+  .strict();
+
+export const artworkUploadSchema = z
+  .object({
+    nodeId: z.string().uuid().nullable().optional(),
+    placement: z
+      .enum(['cover', 'frontispiece', 'chapter-opener', 'inline', 'full-page'])
+      .optional(),
+    alt: z.string().max(500).optional(),
+  })
+  .strict();
+
+export const aiEditSchema = z
+  .object({
+    action: z.enum(['refine', 'expand', 'shorten', 'continue', 'regenerate']),
+    instruction: z.string().max(2000).optional(),
+  })
+  .strict();
+
+export const snapshotReasonSchema = z.enum([
+  'manual',
+  'pre-ai-edit',
+  'pre-regenerate',
+  'pre-restore',
+]);
+
+export const compileOptionsSchema = z
+  .object({
+    toc: z.boolean().optional(),
+    frontMatter: z.boolean().optional(),
+    backMatter: z.boolean().optional(),
+    numbering: z.boolean().optional(),
+    includeEmpty: z.boolean().optional(),
+    title: z.string().min(1).max(300).optional(),
+    author: z.string().max(200).optional(),
+    language: z.string().min(2).max(20).optional(),
+  })
+  .strict();
+
+export const compileRunSchema = z
+  .object({
+    projectId: projectIdSchema,
+    format: z.enum(['markdown', 'html', 'pdf', 'docx', 'epub']),
+    profileId: z.string().min(1).max(128).optional(),
+    options: compileOptionsSchema.optional(),
+  })
+  .strict();
+
+export const compileBatchSchema = z
+  .object({
+    projectIds: z.array(projectIdSchema).min(1).max(50),
+    format: z.enum(['markdown', 'html', 'pdf', 'docx', 'epub']),
+    options: compileOptionsSchema.optional(),
+  })
+  .strict();
+
 // Keys for the generic, non-secret app-config store. Restricted to a known
 // character set; provider credentials are intentionally NOT reachable here.
 export const appConfigKeySchema = z

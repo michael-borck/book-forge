@@ -150,6 +150,7 @@ interface BookState {
     req: BookRequestInput
   ) => Promise<{ ok: boolean; book?: Book; message?: string }>;
   cancel: () => Promise<void>;
+  retry: (id: string) => Promise<{ ok: boolean; book?: Book; message?: string }>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -204,6 +205,28 @@ export const useBookStore = create<BookState>((set, get) => ({
   async cancel() {
     const id = get().currentBookId;
     if (id) await api.cancelBook(id);
+  },
+
+  async retry(id) {
+    set({ generating: true, progress: null, currentBookId: id, error: null });
+    const unsubscribe = api.onBookProgress((progress) =>
+      set({ progress, currentBookId: progress.bookId })
+    );
+    try {
+      const book = await api.retryBook(id);
+      await get().refresh();
+      return { ok: true, book };
+    } catch (error) {
+      await get().refresh();
+      const message =
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : 'Failed to retry book';
+      return { ok: false, message };
+    } finally {
+      unsubscribe();
+      set({ generating: false, currentBookId: null });
+    }
   },
 
   async remove(id) {

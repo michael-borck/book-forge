@@ -7,18 +7,32 @@
 
 import Store from 'electron-store';
 
-export type BookStatus = 'generating' | 'completed' | 'error' | 'cancelled';
+export type BookStatus =
+  | 'draft'
+  | 'planned'
+  | 'generating'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
 export type ChapterStatus = 'pending' | 'generating' | 'completed' | 'error';
 
 export interface StoredChapter {
   id: string;
   number: number;
   title: string;
+  /** Optional outline brief used in the chapter prompt. */
+  synopsis?: string;
   content: string;
   status: ChapterStatus;
   tokens: number; // total (in + out) for this chapter
   tokensIn: number;
   tokensOut: number;
+}
+
+export interface StoredResearch {
+  id: string;
+  title: string;
+  content: string;
 }
 
 export interface StoredBook {
@@ -33,6 +47,8 @@ export interface StoredBook {
   status: BookStatus;
   error?: string;
   chapters: StoredChapter[];
+  /** Imported source material, used for grounding but never exported. */
+  research?: StoredResearch[];
   totalTokens: number;
   tokensIn: number;
   tokensOut: number;

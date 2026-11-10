@@ -237,6 +237,7 @@ export class ClaudeProvider extends BaseProvider {
     const response = await this.makeRequest<ClaudeChatResponse>('/v1/messages', {
       method: 'POST',
       body: JSON.stringify(request),
+      signal: params.signal,
     });
 
     const content = response.content[0];
@@ -283,6 +284,7 @@ export class ClaudeProvider extends BaseProvider {
       headers: {
         'Accept': 'text/event-stream',
       },
+      signal: params.signal,
     });
 
     if (!response.body) {
@@ -501,6 +503,7 @@ export class ClaudeProvider extends BaseProvider {
       method: string;
       body?: string;
       headers?: Record<string, string>;
+      signal?: AbortSignal;
     }
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -518,6 +521,7 @@ export class ClaudeProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {
@@ -596,6 +600,7 @@ export class ClaudeProvider extends BaseProvider {
       method: string;
       body?: string;
       headers?: Record<string, string>;
+      signal?: AbortSignal;
     }
   ): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -613,6 +618,7 @@ export class ClaudeProvider extends BaseProvider {
         method: options.method,
         headers,
         body: options.body,
+        signal: options.signal,
       });
 
       if (!response.ok) {

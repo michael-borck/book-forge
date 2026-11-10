@@ -7,11 +7,11 @@
  * HTML rendering/sanitisation lives in ./bookHtml (pure, unit-tested).
  */
 
-import { app, dialog, BrowserWindow } from 'electron';
+import { dialog } from 'electron';
 import { promises as fs } from 'fs';
-import * as path from 'path';
 import type { StoredBook } from './bookStore';
 import { toMarkdown, toHtml } from './bookHtml';
+import { renderHtmlToPdf } from './pdfRenderer';
 
 export type ExportFormat = 'markdown' | 'html' | 'pdf';
 
@@ -41,22 +41,7 @@ export class BookExporter {
   }
 
   private async toPdf(book: StoredBook): Promise<Buffer> {
-    // Render the HTML in an offscreen window, then print it to PDF. A temp file
-    // is used rather than a data: URL so large books don't hit URL length limits.
-    const tmpFile = path.join(app.getPath('temp'), `bookforge-${book.id}.html`);
-    await fs.writeFile(tmpFile, toHtml(book), 'utf-8');
-
-    const win = new BrowserWindow({
-      show: false,
-      webPreferences: { sandbox: true, javascript: false, contextIsolation: true },
-    });
-    try {
-      await win.loadFile(tmpFile);
-      return await win.webContents.printToPDF({ printBackground: true });
-    } finally {
-      win.destroy();
-      await fs.unlink(tmpFile).catch(() => undefined);
-    }
+    return renderHtmlToPdf(toHtml(book), book.id);
   }
 }
 

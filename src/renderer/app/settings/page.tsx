@@ -7,6 +7,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettingsStore, type ProviderUiStatus } from '@/lib/store'
+import { ImageProviderSettings } from '@/components/settings/ImageProviderSettings'
 
 const STATUS_META: Record<ProviderUiStatus, { label: string; variant: BadgeProps['variant'] }> = {
   ready: { label: 'Ready', variant: 'default' },
@@ -300,6 +301,8 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        <ImageProviderSettings />
       </div>
     </div>
   )

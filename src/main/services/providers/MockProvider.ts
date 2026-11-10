@@ -96,7 +96,7 @@ export class MockProvider extends BaseProvider {
   protected async doGenerate(params: GenerationParams): Promise<GenerationChunk> {
     // Simulate generation delay
     const delay = Math.random() * 1000 + 500; // 500-1500ms
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await this.sleep(delay, params.signal);
 
     // Generate mock content based on the messages
     const lastMessage = params.messages[params.messages.length - 1];
@@ -127,7 +127,7 @@ export class MockProvider extends BaseProvider {
       currentContent += words[i] + (i < words.length - 1 ? ' ' : '');
       
       // Simulate streaming delay
-      await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+      await this.sleep(50 + Math.random() * 100, params.signal);
       
       const isLast = i === words.length - 1;
       
@@ -189,6 +189,31 @@ export class MockProvider extends BaseProvider {
   // =====================
   // Private Helper Methods
   // =====================
+
+  /** Abort-aware delay so cancellation behaves like a real provider request. */
+  private sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(this.abortError());
+        return;
+      }
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(this.abortError());
+      };
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  private abortError(): Error {
+    const error = new Error('Request was aborted');
+    error.name = 'AbortError';
+    return error;
+  }
 
   private generateMockContent(prompt: string, maxTokens: number): string {
     const templates = [

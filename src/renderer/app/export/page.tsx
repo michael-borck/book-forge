@@ -4,30 +4,33 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { FileCode, FileText, FileImage } from 'lucide-react'
-import { useBookStore } from '@/lib/store'
-import { api, ApiError, type ExportFormat } from '@/lib/api'
+import { BookOpen, FileCode, FileImage, FileText } from 'lucide-react'
+import { api, ApiError, type CompileFormat } from '@/lib/api'
+import { useProjectStore } from '@/lib/projectStore'
 
-const FORMATS: { format: ExportFormat; label: string; icon: typeof FileText }[] = [
+const FORMATS: { format: CompileFormat; label: string; icon: typeof FileText }[] = [
   { format: 'markdown', label: 'Markdown', icon: FileCode },
   { format: 'html', label: 'HTML', icon: FileText },
   { format: 'pdf', label: 'PDF', icon: FileImage },
+  { format: 'docx', label: 'Word', icon: FileText },
+  { format: 'epub', label: 'EPUB', icon: BookOpen },
 ]
 
 export default function ExportPage() {
-  const { books, loading, unavailable, refresh } = useBookStore()
+  const { projects, loading, refreshProjects } = useProjectStore()
   const [busy, setBusy] = useState<string | null>(null)
+  const [batchBusy, setBatchBusy] = useState<CompileFormat | null>(null)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    void refreshProjects()
+  }, [refreshProjects])
 
-  async function handleExport(bookId: string, format: ExportFormat) {
-    setBusy(`${bookId}:${format}`)
+  async function handleCompile(projectId: string, format: CompileFormat) {
+    setBusy(`${projectId}:${format}`)
     setMessage(null)
     try {
-      const result = await api.exportBook(bookId, format)
+      const result = await api.compileProject(projectId, format)
       if (!result.canceled) {
         setMessage({ ok: true, text: `Exported to ${result.path}` })
       }
@@ -40,19 +43,66 @@ export default function ExportPage() {
     }
   }
 
+  async function handleBatch(format: CompileFormat) {
+    if (projects.length === 0) return
+    setBatchBusy(format)
+    setMessage(null)
+    try {
+      const result = await api.batchCompile(
+        projects.map((project) => project.id),
+        format
+      )
+      if (result.canceled) return
+      const ok = result.results.filter((entry) => !entry.error).length
+      const failed = result.results.filter((entry) => entry.error).length
+      setMessage({
+        ok: failed === 0,
+        text: `Exported ${ok} project(s)${failed ? `, ${failed} failed` : ''}.`,
+      })
+    } catch (error) {
+      setMessage({
+        ok: false,
+        text: error instanceof Error ? error.message : 'Batch export failed',
+      })
+    } finally {
+      setBatchBusy(null)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Export</h1>
+        <h1 className="text-3xl font-bold">Compile &amp; Export</h1>
         <p className="text-muted-foreground mt-2">
-          Export your books to Markdown, HTML, or PDF
+          Export any book project to Markdown, HTML, PDF, Word, or EPUB
         </p>
       </div>
 
-      {unavailable && (
-        <p className="text-sm text-muted-foreground">
-          Export is only available in the BookForge desktop app.
-        </p>
+      {projects.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Compile all projects</CardTitle>
+            <CardDescription>
+              Choose a folder once, then export every project into it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {FORMATS.map(({ format, label, icon: Icon }) => (
+                <Button
+                  key={format}
+                  size="sm"
+                  variant="outline"
+                  disabled={batchBusy !== null}
+                  onClick={() => void handleBatch(format)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {batchBusy === format ? 'Exporting…' : `All as ${label}`}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {message && (
@@ -61,15 +111,15 @@ export default function ExportPage() {
         </p>
       )}
 
-      {loading && !books.length && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {loading && !projects.length && <p className="text-sm text-muted-foreground">Loading…</p>}
 
       <div className="space-y-4">
-        {books.map((book) => (
-          <Card key={book.id}>
+        {projects.map((project) => (
+          <Card key={project.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{book.title}</CardTitle>
+              <CardTitle className="text-lg">{project.title}</CardTitle>
               <CardDescription>
-                {book.chapters.length} chapters · {book.status}
+                {project.wordCount.toLocaleString()} words · {project.status}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -79,20 +129,23 @@ export default function ExportPage() {
                     key={format}
                     size="sm"
                     variant="outline"
-                    disabled={busy !== null || book.status === 'error'}
-                    onClick={() => handleExport(book.id, format)}
+                    disabled={busy !== null || project.status === 'draft'}
+                    onClick={() => handleCompile(project.id, format)}
                   >
                     <Icon className="h-4 w-4" />
-                    {busy === `${book.id}:${format}` ? 'Exporting…' : label}
+                    {busy === `${project.id}:${format}` ? 'Exporting…' : label}
                   </Button>
                 ))}
+                <Button size="sm" variant="ghost" asChild>
+                  <Link href={`/book?id=${project.id}`}>Open workbench</Link>
+                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {!loading && !unavailable && books.length === 0 && (
+      {!loading && projects.length === 0 && (
         <Card className="py-12 text-center">
           <CardContent>
             <p className="text-muted-foreground">

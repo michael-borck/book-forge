@@ -10,7 +10,11 @@
 
 import { safeStorage } from 'electron';
 import Store from 'electron-store';
-import type { ProviderConfig } from '../../shared/types';
+import type {
+  ImageProviderConfig,
+  ProviderConfig,
+  RedactedImageProviderConfig,
+} from '../../shared/types';
 
 // Fields that must never be persisted in plaintext.
 const SECRET_FIELDS = ['apiKey', 'bearerToken'] as const;
@@ -32,9 +36,17 @@ interface StoredProviderEntry {
   encrypted?: boolean;
 }
 
+type NonSecretImageConfig = Omit<ImageProviderConfig, SecretField>;
+
+interface StoredImageProviderEntry {
+  config: NonSecretImageConfig;
+  secrets?: Partial<Record<SecretField, StoredSecret>>;
+}
+
 interface StoreSchema {
   app: Record<string, unknown>;
   providers: Record<string, StoredProviderEntry>;
+  imageProviders: Record<string, StoredImageProviderEntry>;
 }
 
 // A provider config safe to hand to the renderer: no secret material, just flags.
@@ -49,8 +61,9 @@ export class SecureConfigStore {
   constructor() {
     this.store = new Store<StoreSchema>({
       name: 'bookforge-config',
-      defaults: { app: {}, providers: {} },
+      defaults: { app: {}, providers: {}, imageProviders: {} },
     });
+    if (!this.store.get('imageProviders')) this.store.set('imageProviders', {});
   }
 
   // ===== Generic (non-secret) application config =====
@@ -144,6 +157,72 @@ export class SecureConfigStore {
     const providers = { ...this.store.get('providers') };
     delete providers[providerId];
     this.store.set('providers', providers);
+  }
+
+  // ===== Image provider configuration (encrypted secrets) =====
+
+  setImageProviderConfig(providerId: string, config: ImageProviderConfig): void {
+    const rest: Record<string, unknown> = { ...config };
+    const secrets: Partial<Record<SecretField, StoredSecret>> = {};
+
+    for (const field of SECRET_FIELDS) {
+      const value = config[field];
+      delete rest[field];
+      if (typeof value === 'string' && value.trim()) {
+        secrets[field] = this.encryptSecret(`image:${providerId}`, field, value);
+      }
+    }
+
+    const entry: StoredImageProviderEntry = { config: rest as NonSecretImageConfig };
+    if (Object.keys(secrets).length) entry.secrets = secrets;
+
+    const imageProviders = { ...(this.store.get('imageProviders') ?? {}) };
+    imageProviders[providerId] = entry;
+    this.store.set('imageProviders', imageProviders);
+  }
+
+  getImageProviderConfig(providerId: string): ImageProviderConfig | null {
+    const entry = (this.store.get('imageProviders') ?? {})[providerId];
+    if (!entry) return null;
+    const result: ImageProviderConfig = { ...entry.config };
+    for (const field of SECRET_FIELDS) {
+      const secret = entry.secrets?.[field];
+      if (secret) {
+        const value = this.decryptSecret(`image:${providerId}`, field, secret);
+        if (value) result[field] = value;
+      }
+    }
+    return result;
+  }
+
+  getRedactedImageProviderConfig(providerId: string): RedactedImageProviderConfig | null {
+    const entry = (this.store.get('imageProviders') ?? {})[providerId];
+    if (!entry) return null;
+    return {
+      ...entry.config,
+      hasApiKey: Boolean(entry.secrets?.apiKey),
+      hasBearerToken: Boolean(entry.secrets?.bearerToken),
+    };
+  }
+
+  listRedactedImageProviderConfigs(): Record<string, RedactedImageProviderConfig> {
+    const result: Record<string, RedactedImageProviderConfig> = {};
+    const providers = this.store.get('imageProviders') ?? {};
+    for (const id of Object.keys(providers)) {
+      const redacted = this.getRedactedImageProviderConfig(id);
+      if (redacted) result[id] = redacted;
+    }
+    return result;
+  }
+
+  getConfiguredImageProviderIds(): string[] {
+    return Object.keys(this.store.get('imageProviders') ?? {});
+  }
+
+  deleteImageProviderConfig(providerId: string): void {
+    const providers = { ...(this.store.get('imageProviders') ?? {}) };
+    delete providers[providerId];
+    this.store.set('imageProviders', providers);
   }
 
   // ===== Internals =====

@@ -24,11 +24,20 @@ BookForge is a powerful desktop application that enables users to generate compl
 - 🤖 **Multi-Provider Support**: Works with Groq, Claude, OpenAI, Gemini, and Ollama
 - 💰 **Token Tracking**: Real-time token counting and cost estimation
 - 📚 **Smart Generation**: Two-phase generation for structure and content
-- 🎨 **Customizable Output**: Multiple export formats (Markdown, HTML, PDF)
+- 📝 **Authoring Workbench**: Binder, outline board, editor with AI refine/expand/rewrite, snapshots with diffs, and entity continuity checks
+- 🎨 **Illustrated Books**: Cover and per-chapter artwork through OpenAI, Google Imagen, OpenAI-compatible endpoints, or self-hosted SwarmUI
+- 🔎 **Research Grounding**: Import text, Markdown, or PDF notes for the AI to draw on
+- 🧩 **Templates**: Start blank or from a course, guide, or novel skeleton
+- 📦 **Customizable Output**: Markdown, HTML, PDF, DOCX, and EPUB 3; single or batch export
 - 🖥️ **Cross-Platform**: Native desktop app for Windows, macOS, and Linux
 - 🔒 **Secure**: Your API keys are encrypted and stored locally
 - 🎯 **User-Friendly**: Designed for non-technical users
 - ⚡ **Fast**: Streaming generation with real-time preview
+
+## Documentation
+
+See the [User Guide](docs/USER_GUIDE.md) for the full workflow: providers,
+templates, the workbench, artwork, research, snapshots, continuity, and exports.
 
 ## Installation
 

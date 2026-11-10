@@ -311,3 +311,48 @@ export function isBookGenerationParams(params: unknown): boolean {
 export function isValidExportFormat(format: string): boolean {
   return (SUPPORTED_EXPORT_FORMATS as readonly string[]).includes(format);
 }
+// Project / workbench types
+export type {
+  Project,
+  ProjectSummary,
+  ProjectStatus,
+  ProjectSettings,
+  ProjectBook,
+  BookNode,
+  NodeKind,
+  NodeStatus,
+  CompileProfile,
+  CompileFormat,
+  Snapshot,
+  SnapshotReason,
+  CreateProjectInput,
+} from './project';
+
+export { createDefaultCompileProfiles, wordCount } from './project';
+
+// Artwork + image provider types
+export type {
+  Artwork,
+  ArtworkAsset,
+  ArtworkPlacement,
+  ArtworkStatus,
+  ArtworkSource,
+  ArtPlanMeta,
+  ArtworkProgress,
+} from './artwork';
+
+export type {
+  ImageProvider,
+  ImageProviderId,
+  ImageProviderInfo,
+  ImageProviderConfig,
+  RedactedImageProviderConfig,
+  ImageGenOptions,
+} from './image';
+
+// Book templates
+export type {
+  BookTemplateDefinition,
+  BookTemplateChapter,
+} from './templates';
+export { BOOK_TEMPLATES, getBookTemplate } from './templates';
