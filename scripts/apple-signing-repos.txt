@@ -1,0 +1,32 @@
+# owner/repo            type     notes
+michael-borck/book-forge electron
+michael-borck/bowerbird electron
+michael-borck/cabinet electron
+michael-borck/career-compass electron
+michael-borck/character-craft-lite electron
+michael-borck/cite-sight electron
+michael-borck/curriculum-curator electron
+michael-borck/debrief electron
+michael-borck/feed-forward-desktop electron
+michael-borck/assessment-bench-desktop electron
+michael-borck/assessment-lens-desktop electron
+michael-borck/insight-lens electron
+michael-borck/lens-desktop electron
+michael-borck/thematic-lens electron
+michael-borck/playable-lessons electron
+michael-borck/study-buddy electron
+michael-borck/talk-buddy electron
+
+michael-borck/cairn tauri
+michael-borck/case-crafter tauri
+michael-borck/ethos-mirror tauri
+michael-borck/Knotebook tauri
+michael-borck/document-lens tauri   # has its own TAURI_SIGNING_PRIVATE_KEY
+michael-borck/lesson-loom tauri
+michael-borck/limn tauri
+michael-borck/slide-stream tauri
+michael-borck/venture-lab tauri
+michael-borck/video-to-guide tauri
+retroverse-studios/astron tauri     # has its own TAURI_SIGNING_PRIVATE_KEY
+retroverse-studios/karaoke-stage tauri
+retroverse-studios/numeron tauri    # has its own TAURI_SIGNING_PRIVATE_KEY
