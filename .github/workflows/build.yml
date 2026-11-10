@@ -58,13 +58,31 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo snap install snapcraft --classic
 
+      # Write the App Store Connect API key to a temp file for @electron/notarize.
+      # scripts/notarize.js prefers this over the legacy Apple ID credentials.
+      - name: Prepare App Store Connect API key (macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ] && [ -n "$APPLE_API_KEY" ]; then
+            mkdir -p "$RUNNER_TEMP/apple-api"
+            KEY_PATH="$RUNNER_TEMP/apple-api/AuthKey_${APPLE_API_KEY}.p8"
+            printf '%s' "$APPLE_API_KEY_CONTENT" | openssl base64 -d -A > "$KEY_PATH"
+            chmod 600 "$KEY_PATH"
+            echo "APPLE_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+            echo "Prepared App Store Connect API key"
+          else
+            echo "No API key secrets; notarization will use Apple ID if configured"
+          fi
+
       # macOS: code-sign + notarize. electron-builder imports the signing
       # certificate itself from CSC_LINK / CSC_KEY_PASSWORD (no manual keychain
       # step - that approach hit keychain-partition codesign failures on the
-      # Electron framework's resource files). scripts/notarize.js (the afterSign
-      # hook) reads NOTARIZE_APPLE_*. The names are NOTARIZE_APPLE_* (not
-      # APPLE_*) so electron-builder's own buggy auto-notarize wrapper doesn't
-      # also fire.
+      # Electron framework's resource files). scripts/notarize.js prefers the
+      # API key variables (APPLE_API_KEY_PATH / APPLE_API_KEY / APPLE_API_ISSUER)
+      # and falls back to NOTARIZE_APPLE_*.
       - name: Package Electron app (macOS)
         if: matrix.os == 'macos-latest'
         # An UNSET CSC_LINK secret arrives as an empty string, which
@@ -75,6 +93,7 @@ jobs:
           if [ -z "$CSC_LINK" ]; then
             unset CSC_LINK CSC_KEY_PASSWORD
             unset NOTARIZE_APPLE_ID NOTARIZE_APPLE_PASSWORD NOTARIZE_APPLE_TEAM_ID
+            unset APPLE_API_KEY_PATH APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_CONTENT
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             echo "CSC_LINK not set - building unsigned"
             npx electron-builder --mac --publish never
@@ -94,14 +113,20 @@ jobs:
             rm -rf release
             unset CSC_LINK CSC_KEY_PASSWORD
             unset NOTARIZE_APPLE_ID NOTARIZE_APPLE_PASSWORD NOTARIZE_APPLE_TEAM_ID
+            unset APPLE_API_KEY_PATH APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_CONTENT
             export CSC_IDENTITY_AUTO_DISCOVERY=false
             npx electron-builder --mac --publish never
           fi
           exit $?
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # Canonical names first; legacy names keep old repos working.
+          CSC_LINK: ${{ secrets.APPLE_CERTIFICATE || secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          # Legacy fallback for notarization.
           NOTARIZE_APPLE_ID: ${{ secrets.APPLE_ID }}
           NOTARIZE_APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           NOTARIZE_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
