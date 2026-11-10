@@ -16,9 +16,9 @@ jobs:
       matrix:
         include:
           # Pin the Electron macOS job. electron-builder 24's automatic
-          # temporary-keychain import fails on newer macOS runners; macos-14 is
+          # temporary-keychain import fails on newer macOS runners; macos-15 is
           # the known-good runner used by the other Electron releases.
-          - os: macos-14
+          - os: macos-15
             platform: mac
           - os: ubuntu-latest
             platform: linux
@@ -64,7 +64,7 @@ jobs:
       # Write the App Store Connect API key to a temp file for @electron/notarize.
       # scripts/notarize.js prefers this over the legacy Apple ID credentials.
       - name: Prepare App Store Connect API key (macOS)
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -87,7 +87,7 @@ jobs:
       # API key variables (APPLE_API_KEY_PATH / APPLE_API_KEY / APPLE_API_ISSUER)
       # and falls back to NOTARIZE_APPLE_*.
       - name: Package Electron app (macOS)
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-15'
         # An UNSET CSC_LINK secret arrives as an empty string, which
         # electron-builder treats as a certificate file path and dies on
         # ("not a file"). Unset it and disable identity discovery so the build
@@ -135,7 +135,7 @@ jobs:
           NOTARIZE_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Package Electron app (Windows/Linux)
-        if: matrix.os != 'macos-14'
+        if: matrix.os != 'macos-15'
         run: npx electron-builder --${{ matrix.platform }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
